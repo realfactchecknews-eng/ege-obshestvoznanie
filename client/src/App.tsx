@@ -4,18 +4,20 @@ import Dashboard from './pages/Dashboard'
 import Theory from './pages/Theory'
 import Practice from './pages/Practice'
 import Variant from './pages/Variant'
+import BookVariants from './pages/BookVariants'
 import WeakSpots from './pages/WeakSpots'
 import Flashcards from './pages/Flashcards'
 import { useTheme } from './lib/theme'
 import { StreakFlame } from './components/StreakFlame'
 import { AuthWidget } from './components/AuthWidget'
 
-type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'weak' | 'flash'
+type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'book' | 'weak' | 'flash'
 
 const NAV: { id: View; label: string; icon: () => ReactElement }[] = [
   { id: 'dashboard', label: 'Главная',     icon: () => <IconHome /> },
   { id: 'theory',    label: 'Теория',      icon: () => <IconBook /> },
   { id: 'practice',  label: 'Задания',     icon: () => <IconPencil /> },
+  { id: 'book',      label: 'Сборник 30',  icon: () => <IconStack /> },
   { id: 'variant',   label: 'Вариант',     icon: () => <IconTimer /> },
   { id: 'weak',      label: 'Слабые места', icon: () => <IconTarget /> },
   { id: 'flash',     label: 'Карточки',    icon: () => <IconCards /> },
@@ -109,6 +111,7 @@ export default function App() {
         {view === 'theory' && <Theory />}
         {view === 'practice' && <Practice initialTopics={weakTopics} />}
         {view === 'variant' && <Variant />}
+        {view === 'book' && <BookVariants />}
         {view === 'weak' && (
           <WeakSpots
             practiceWeak={(topics) => {
@@ -208,6 +211,15 @@ function IconCards() {
     <svg viewBox="0 0 24 24" stroke="currentColor" className={ICON_PROPS} {...STROKE}>
       <rect x="3" y="6" width="14" height="14" rx="2" />
       <rect x="7" y="3" width="14" height="14" rx="2" />
+    </svg>
+  )
+}
+
+function IconStack() {
+  return (
+    <svg viewBox="0 0 24 24" stroke="currentColor" className={ICON_PROPS} {...STROKE}>
+      <path d="M12 2 2 7l10 5 10-5-10-5z" />
+      <path d="M2 17l10 5 10-5M2 12l10 5 10-5" />
     </svg>
   )
 }

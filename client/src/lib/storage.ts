@@ -25,7 +25,19 @@ function write<T>(key: string, val: T) {
 }
 
 // Ключи, относящиеся к прогрессу ученика (для облачной синхронизации)
-export const PROGRESS_KEYS = [K.answers, K.learned, K.variants, K.flash, K.streak]
+export const PROGRESS_KEYS = [K.answers, K.learned, K.variants, K.flash, K.streak, 'ege_book']
+
+// ---- Прогресс по вариантам сборника (лучший результат части 1) ----
+export function getBookScores(): Record<number, number> {
+  return read<Record<number, number>>('ege_book', {})
+}
+export function setBookScore(variant: number, score: number) {
+  const all = getBookScores()
+  if (score > (all[variant] ?? -1)) {
+    all[variant] = score
+    write('ege_book', all)
+  }
+}
 
 export function todayStr(): string {
   return new Date().toISOString().slice(0, 10)
