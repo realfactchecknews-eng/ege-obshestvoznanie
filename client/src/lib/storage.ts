@@ -18,7 +18,14 @@ function read<T>(key: string, fallback: T): T {
 }
 function write<T>(key: string, val: T) {
   localStorage.setItem(key, JSON.stringify(val))
+  // уведомляем слой синхронизации, что прогресс изменился
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('ege:progress-changed', { detail: { key } }))
+  }
 }
+
+// Ключи, относящиеся к прогрессу ученика (для облачной синхронизации)
+export const PROGRESS_KEYS = [K.answers, K.learned, K.variants, K.flash, K.streak]
 
 export function todayStr(): string {
   return new Date().toISOString().slice(0, 10)

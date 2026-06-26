@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
-import { getAnswers, getStreak, solvedToday, getVariants } from '../lib/storage'
+import { getAnswers, solvedToday, getVariants } from '../lib/storage'
 import { tasks, TOPICS } from '../lib/data'
+import { StreakFlame } from '../components/StreakFlame'
 
 const DAILY_GOAL = 15
 
 export default function Dashboard({ go }: { go: (v: string) => void }) {
   const answers = getAnswers()
-  const streak = getStreak()
   const today = solvedToday()
   const variants = getVariants()
 
@@ -66,15 +66,11 @@ export default function Dashboard({ go }: { go: (v: string) => void }) {
         </div>
       </section>
 
+      {/* ===== ОГОНЁК СЕРИИ ===== */}
+      <StreakFlame />
+
       {/* ===== МЕТРИКИ ===== */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-        <MetricCard
-          icon={<IconStreak />}
-          label="Серия дней"
-          value={streak.count}
-          tone={streak.count > 0 ? 'accent' : 'neutral'}
-          suffix={streak.count > 0 ? '🔥' : ''}
-        />
+      <section className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         <MetricCard
           icon={<IconCheck />}
           label="Всего решено"
@@ -401,13 +397,6 @@ const IC = "w-4 h-4"
 const IC_LG = "w-5 h-5"
 const STROKE = { strokeWidth: 2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' }
 
-function IconStreak() {
-  return (
-    <svg viewBox="0 0 24 24" stroke="currentColor" className={IC} {...STROKE}>
-      <path d="M13 2 L6 13 H11 L9 22 L18 9 H13 Z" fill="currentColor" />
-    </svg>
-  )
-}
 function IconCheck() {
   return (
     <svg viewBox="0 0 24 24" stroke="currentColor" className={IC} {...STROKE}>

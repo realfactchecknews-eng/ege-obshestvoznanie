@@ -7,6 +7,8 @@ import Variant from './pages/Variant'
 import WeakSpots from './pages/WeakSpots'
 import Flashcards from './pages/Flashcards'
 import { useTheme } from './lib/theme'
+import { StreakFlame } from './components/StreakFlame'
+import { AuthWidget } from './components/AuthWidget'
 
 type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'weak' | 'flash'
 
@@ -87,10 +89,17 @@ export default function App() {
           })}
         </nav>
 
-        {/* Низ сайдбара — подпись */}
-        <div className="hidden md:block p-4 border-t border-border-soft">
-          <p className="text-xs text-muted">Цель: 85+ баллов</p>
-          <p className="text-xs text-muted/70 mt-0.5">v2.0 · мятный редизайн</p>
+        {/* Низ сайдбара — аккаунт + огонёк серии + подпись */}
+        <div className="hidden md:block p-4 border-t border-border-soft space-y-3">
+          <AuthWidget />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-muted">Серия</span>
+            <StreakFlame variant="compact" />
+          </div>
+          <div>
+            <p className="text-xs text-muted">Цель: 85+ баллов</p>
+            <p className="text-xs text-muted/70 mt-0.5">v2.1 · аккаунт + ИИ</p>
+          </div>
         </div>
       </aside>
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Task } from '../types'
 import { checkAnswer } from '../lib/data'
+import { checkEssay, aiAvailable, type EssayCheck } from '../lib/ai'
 
 interface Props {
   task: Task
@@ -21,6 +22,24 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
   const [checkedCrit, setCheckedCrit] = useState<Set<number>>(new Set())
   const [submitted, setSubmitted] = useState(false)
   const [result, setResult] = useState<boolean | null>(null)
+  // письменные задания + ИИ-проверка
+  const [written, setWritten] = useState('')
+  const [aiBusy, setAiBusy] = useState(false)
+  const [aiResult, setAiResult] = useState<EssayCheck | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
+
+  async function runAiCheck() {
+    setAiError(null)
+    setAiBusy(true)
+    try {
+      const res = await checkEssay(task, written)
+      setAiResult(res)
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setAiBusy(false)
+    }
+  }
 
   function buildAnswer(): string {
     if (task.type === 'single') return single
@@ -273,10 +292,78 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
         <div className="space-y-4">
           <textarea
             rows={6}
+            value={written}
+            onChange={(e) => setWritten(e.target.value)}
             placeholder="Введите развёрнутый ответ..."
             className="w-full px-4 py-3 rounded-lg border-2 border-border bg-panel2 outline-none
                        focus:border-accent focus:ring-2 focus:ring-accent/20 resize-y text-sm leading-relaxed"
           />
+
+          {/* ИИ-проверка письменного ответа */}
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              className="btn-primary flex items-center gap-2 disabled:opacity-60"
+              onClick={runAiCheck}
+              disabled={aiBusy || !written.trim() || !aiAvailable}
+              title={!aiAvailable ? 'ИИ-проверка включится после настройки аккаунта (Supabase)' : ''}
+            >
+              {aiBusy ? (
+                <svg viewBox="0 0 24 24" className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z" />
+                </svg>
+              )}
+              {aiBusy ? 'Проверяю…' : 'Проверить с ИИ'}
+            </button>
+            {!aiAvailable && (
+              <span className="text-xs text-muted">ИИ-проверка включится после настройки аккаунта</span>
+            )}
+          </div>
+
+          {aiError && (
+            <p className="text-sm text-bad bg-bad/10 rounded-lg px-3 py-2">Ошибка проверки: {aiError}</p>
+          )}
+
+          {aiResult && (
+            <div className="card p-4 bg-panel2 animate-fade-in space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-xs uppercase tracking-wide text-accent2 font-semibold flex items-center gap-1.5">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z" />
+                  </svg>
+                  Оценка ИИ
+                </p>
+                <span className={`font-bold text-lg ${aiResult.score >= aiResult.maxScore ? 'text-good' : aiResult.score > 0 ? 'text-warn' : 'text-bad'}`}>
+                  {aiResult.score} <span className="text-muted font-normal text-sm">/ {aiResult.maxScore} баллов</span>
+                </span>
+              </div>
+              <div className="space-y-2">
+                {aiResult.perCriterion?.map((c, i) => (
+                  <div key={i} className="flex items-start gap-2.5 text-sm">
+                    <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${c.met ? 'bg-good text-white' : 'bg-bad text-white'}`}>
+                      <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d={c.met ? 'M5 13l4 4L19 7' : 'M18 6L6 18M6 6l12 12'} />
+                      </svg>
+                    </span>
+                    <div>
+                      <p className="text-text-soft">{c.criterion}</p>
+                      {c.comment && <p className="text-xs text-muted mt-0.5">{c.comment}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {aiResult.overall && (
+                <p className="text-sm leading-relaxed text-text border-t border-border-soft pt-3">
+                  <span className="text-accent2 font-medium">Итог: </span>{aiResult.overall}
+                </p>
+              )}
+              <p className="text-[11px] text-muted">ИИ-оценка ориентировочна и может отличаться от реального эксперта ФИПИ.</p>
+            </div>
+          )}
+
           <button
             className="btn-outline flex items-center gap-2"
             onClick={() => setShowModel((v) => !v)}
