@@ -33,7 +33,6 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
 
   function emitChange(next?: Partial<{ single: string; multi: Set<number>; match: number[]; fill: string }>) {
     if (!controlled || !onChange) return
-    // вычисляем ответ с учётом обновлённого состояния
     const s = next?.single ?? single
     const m = next?.multi ?? multi
     const mt = next?.match ?? matchSel
@@ -54,47 +53,78 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
   }
 
   const isWritten = task.type === 'written'
+  const isPart2 = task.task_number > 20
   const disabled = submitted || controlled
 
   return (
-    <div className="card p-5">
-      <div className="flex items-center gap-2 mb-3 text-xs flex-wrap">
-        <span className="px-2 py-1 rounded bg-accent/20 text-accent font-semibold">
-          Задание {task.task_number}
+    <div className={`card p-5 md:p-6 transition-shadow ${submitted && !controlled ? 'shadow-soft-md' : ''}`}>
+      {/* Header */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <span className="chip">
+          <span className="font-mono font-bold">№ {task.task_number}</span>
         </span>
-        <span className="px-2 py-1 rounded bg-panel2 text-muted">{task.topic}</span>
-        <span className="px-2 py-1 rounded bg-panel2 text-muted">{task.subtopic}</span>
-        <span className="ml-auto text-muted">{task.source}</span>
+        <span className="text-xs text-text-soft font-medium">{task.topic}</span>
+        <span className="text-xs text-muted">·</span>
+        <span className="text-xs text-muted">{task.subtopic}</span>
+        {isPart2 && (
+          <span className="chip !bg-warn/15 !text-warn !border-warn/30">Часть 2</span>
+        )}
+        {task.source && (
+          <span className="ml-auto text-xs text-muted hidden sm:inline">{task.source}</span>
+        )}
       </div>
 
-      <p className="whitespace-pre-line leading-relaxed mb-4">{task.question}</p>
+      {/* Question */}
+      <div className="mb-4">
+        <p className="whitespace-pre-line leading-relaxed text-[15px] md:text-base">
+          {task.question}
+        </p>
+      </div>
 
       {/* SINGLE */}
       {task.type === 'single' && (
         <div className="space-y-2">
-          {task.options.map((opt) => {
+          {task.options.map((opt, i) => {
             const sel = single === opt
             const isCorrect = submitted && opt === task.correct_answer
             const isWrong = submitted && sel && opt !== task.correct_answer
+            const showLetter = task.options_letters !== false
             return (
               <button
-                key={opt}
+                key={i}
                 disabled={disabled}
                 onClick={() => {
                   setSingle(opt)
                   emitChange({ single: opt })
                 }}
-                className={`w-full text-left px-4 py-2.5 rounded-lg border transition-colors ${
-                  isCorrect
-                    ? 'border-good bg-good/10'
+                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all flex items-start gap-3
+                  ${isCorrect
+                    ? 'border-good bg-good/10 shadow-[0_0_0_1px_rgba(52,211,153,0.3)]'
                     : isWrong
                     ? 'border-bad bg-bad/10'
                     : sel
-                    ? 'border-accent bg-accent/10'
-                    : 'border-border bg-panel2 hover:border-accent/50'
-                }`}
+                    ? 'border-accent bg-accent-soft'
+                    : 'border-border bg-panel2 hover:border-accent/50 hover:bg-panel'}`}
               >
-                {opt}
+                {showLetter && (
+                  <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold
+                    ${isCorrect ? 'bg-good text-white' :
+                      isWrong ? 'bg-bad text-white' :
+                      sel ? 'bg-accent text-white' : 'bg-panel border border-border text-text-soft'}`}>
+                    {String.fromCharCode(1040 + i)}
+                  </span>
+                )}
+                <span className="flex-1 pt-0.5">{opt}</span>
+                {isCorrect && (
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-good shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {isWrong && (
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-bad shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                )}
               </button>
             )
           })}
@@ -104,6 +134,13 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
       {/* MULTIPLE */}
       {task.type === 'multiple' && (
         <div className="space-y-2">
+          <p className="text-xs text-muted mb-1 flex items-center gap-1.5">
+            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 16v-4M12 8h.01" />
+            </svg>
+            Выбери несколько вариантов
+          </p>
           {task.options.map((opt, i) => {
             const sel = multi.has(i)
             const correctSet = task.correct_answer.split('').map((c) => +c - 1)
@@ -119,18 +156,27 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
                   setMulti(n)
                   emitChange({ multi: n })
                 }}
-                className={`w-full text-left px-4 py-2.5 rounded-lg border flex gap-3 items-start transition-colors ${
-                  isCorrect
+                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all flex items-start gap-3
+                  ${isCorrect
                     ? 'border-good bg-good/10'
                     : isWrong
                     ? 'border-bad bg-bad/10'
                     : sel
-                    ? 'border-accent bg-accent/10'
-                    : 'border-border bg-panel2 hover:border-accent/50'
-                }`}
+                    ? 'border-accent bg-accent-soft'
+                    : 'border-border bg-panel2 hover:border-accent/50 hover:bg-panel'}`}
               >
-                <span className="font-mono text-muted">{i + 1}</span>
-                <span>{opt}</span>
+                <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold
+                  ${isCorrect ? 'bg-good text-white' :
+                    isWrong ? 'bg-bad text-white' :
+                    sel ? 'bg-accent text-white' : 'bg-panel border border-border text-text-soft'}`}>
+                  {i + 1}
+                </span>
+                <span className="flex-1 pt-0.5">{opt}</span>
+                {sel && !submitted && (
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-accent2 shrink-0 mt-1" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
               </button>
             )
           })}
@@ -139,28 +185,35 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
 
       {/* MATCHING */}
       {task.type === 'matching' && task.match_left && task.match_right && (
-        <div className="space-y-2">
-          <p className="text-xs text-muted mb-1">
-            Сопоставьте каждому пункту слева вариант справа:
-          </p>
-          {task.match_right.map((r, i) => (
-            <p key={i} className="text-sm text-muted">
-              <span className="font-mono text-accent">{i + 1}</span> — {r}
-            </p>
-          ))}
-          <div className="mt-3 space-y-2">
+        <div className="space-y-3">
+          <div className="card p-3 bg-panel2/60">
+            <p className="text-xs uppercase tracking-wide text-muted mb-2">Варианты справа</p>
+            <div className="space-y-1.5">
+              {task.match_right.map((r, i) => (
+                <p key={i} className="text-sm flex items-start gap-2">
+                  <span className="font-mono text-accent2 font-bold shrink-0">{i + 1}.</span>
+                  <span>{r}</span>
+                </p>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <p className="text-xs text-muted">Сопоставьте каждому пункту слева вариант справа:</p>
             {task.match_left.map((l, i) => {
               const correctSet = task.correct_answer.split('').map((c) => +c)
-              const ok = submitted && matchSel[i] === correctSet[i]
+              const ok = submitted && matchSel[i] === correctSet[i] && matchSel[i] !== 0
               const bad = submitted && matchSel[i] !== correctSet[i]
               return (
                 <div
                   key={i}
-                  className={`flex gap-3 items-center px-3 py-2 rounded-lg border ${
-                    ok ? 'border-good bg-good/10' : bad ? 'border-bad bg-bad/10' : 'border-border bg-panel2'
-                  }`}
+                  className={`flex gap-3 items-center px-3 py-2.5 rounded-lg border-2 transition-all
+                    ${ok ? 'border-good bg-good/10' :
+                      bad ? 'border-bad bg-bad/10' :
+                      'border-border bg-panel2'}`}
                 >
-                  <span className="font-mono text-muted">{String.fromCharCode(1040 + i)}</span>
+                  <span className="font-mono font-bold text-accent2 shrink-0 w-6">
+                    {String.fromCharCode(1040 + i)}
+                  </span>
                   <span className="flex-1 text-sm">{l}</span>
                   <select
                     disabled={disabled}
@@ -171,7 +224,9 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
                       setMatchSel(n)
                       emitChange({ match: n })
                     }}
-                    className="bg-bg border border-border rounded px-2 py-1 text-sm"
+                    className="bg-panel border border-border rounded-lg px-3 py-1.5 text-sm font-medium
+                               focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none
+                               disabled:opacity-60"
                   >
                     <option value={0}>—</option>
                     {task.match_right!.map((_, j) => (
@@ -189,18 +244,28 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
 
       {/* FILL */}
       {task.type === 'fill' && (
-        <input
-          disabled={disabled}
-          value={fill}
-          onChange={(e) => {
-            setFill(e.target.value)
-            emitChange({ fill: e.target.value })
-          }}
-          placeholder="Введите ответ (одно слово)"
-          className={`w-full px-4 py-2.5 rounded-lg border bg-panel2 outline-none ${
-            submitted ? (result ? 'border-good' : 'border-bad') : 'border-border focus:border-accent'
-          }`}
-        />
+        <div>
+          <input
+            disabled={disabled}
+            value={fill}
+            onChange={(e) => {
+              setFill(e.target.value)
+              emitChange({ fill: e.target.value })
+            }}
+            placeholder="Введите ответ"
+            className={`w-full px-4 py-3 rounded-lg border-2 bg-panel2 outline-none transition-all text-base
+              ${submitted
+                ? result
+                  ? 'border-good bg-good/10'
+                  : 'border-bad bg-bad/10'
+                : 'border-border focus:border-accent focus:ring-2 focus:ring-accent/20'}`}
+          />
+          {submitted && !result && (
+            <p className="text-xs text-muted mt-2">
+              Подсказка: проверка нечувствительна к регистру и замене «е»/«ё».
+            </p>
+          )}
+        </div>
       )}
 
       {/* WRITTEN (part 2) */}
@@ -209,15 +274,22 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
           <textarea
             rows={6}
             placeholder="Введите развёрнутый ответ..."
-            className="w-full px-4 py-3 rounded-lg border border-border bg-panel2 outline-none focus:border-accent resize-y"
+            className="w-full px-4 py-3 rounded-lg border-2 border-border bg-panel2 outline-none
+                       focus:border-accent focus:ring-2 focus:ring-accent/20 resize-y text-sm leading-relaxed"
           />
-          <button className="btn-ghost" onClick={() => setShowModel((v) => !v)}>
-            {showModel ? 'Скрыть' : 'Показать'} эталонный ответ и критерии
+          <button
+            className="btn-outline flex items-center gap-2"
+            onClick={() => setShowModel((v) => !v)}
+          >
+            <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d={showModel ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} />
+            </svg>
+            {showModel ? 'Скрыть' : 'Показать'} эталон и критерии
           </button>
           {showModel && (
-            <div className="space-y-3">
-              <div className="card p-4 bg-panel2">
-                <p className="text-xs uppercase tracking-wide text-muted mb-2">
+            <div className="space-y-3 animate-fade-in">
+              <div className="card p-4 bg-panel2 border-l-4 !border-l-accent">
+                <p className="text-xs uppercase tracking-wide text-accent2 mb-2 font-semibold">
                   Эталонный ответ
                 </p>
                 <p className="whitespace-pre-line text-sm leading-relaxed">
@@ -226,29 +298,45 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
               </div>
               {task.criteria && (
                 <div className="card p-4 bg-panel2">
-                  <p className="text-xs uppercase tracking-wide text-muted mb-2">
-                    Критерии ФИПИ — отметьте, что выполнено
+                  <p className="text-xs uppercase tracking-wide text-accent2 mb-3 font-semibold">
+                    Критерии ФИПИ — отметьте выполненные
                   </p>
                   <div className="space-y-2">
                     {task.criteria.map((c, i) => (
-                      <label key={i} className="flex gap-2 items-start cursor-pointer text-sm">
-                        <input
-                          type="checkbox"
-                          className="mt-1 accent-[#7c5cff]"
-                          checked={checkedCrit.has(i)}
-                          onChange={() => {
-                            const n = new Set(checkedCrit)
-                            n.has(i) ? n.delete(i) : n.add(i)
-                            setCheckedCrit(n)
-                          }}
-                        />
-                        <span className={checkedCrit.has(i) ? 'text-good' : ''}>{c}</span>
+                      <label
+                        key={i}
+                        className="flex gap-2.5 items-start cursor-pointer text-sm py-1.5 px-2 rounded hover:bg-panel transition-colors"
+                      >
+                        <span className={`relative w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors
+                          ${checkedCrit.has(i) ? 'bg-good border-good' : 'border-border bg-panel'}`}>
+                          <input
+                            type="checkbox"
+                            className="absolute inset-0 opacity-0 cursor-pointer"
+                            checked={checkedCrit.has(i)}
+                            onChange={() => {
+                              const n = new Set(checkedCrit)
+                              n.has(i) ? n.delete(i) : n.add(i)
+                              setCheckedCrit(n)
+                            }}
+                          />
+                          {checkedCrit.has(i) && (
+                            <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </span>
+                        <span className={checkedCrit.has(i) ? 'text-text' : 'text-text-soft'}>
+                          {c}
+                        </span>
                       </label>
                     ))}
                   </div>
-                  <p className="text-xs text-muted mt-3">
-                    Выполнено критериев: {checkedCrit.size} из {task.criteria.length}
-                  </p>
+                  <div className="mt-3 pt-3 border-t border-border-soft flex items-center justify-between text-xs">
+                    <span className="text-muted">Выполнено критериев</span>
+                    <span className="font-bold text-accent2">
+                      {checkedCrit.size} <span className="text-muted font-normal">/ {task.criteria.length}</span>
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -256,40 +344,58 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
         </div>
       )}
 
-      {/* CONTROLS */}
+      {/* CONTROLS (только для части 1 в режиме тренировки) */}
       {!controlled && !isWritten && (
-        <div className="mt-4 flex items-center gap-3">
+        <div className="mt-5 flex items-center gap-3">
           {!submitted ? (
-            <button className="btn-primary" onClick={handleSubmit}>
+            <button className="btn-primary flex items-center gap-2" onClick={handleSubmit}>
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
               Проверить
             </button>
           ) : (
-            <span
-              className={`font-semibold ${result ? 'text-good' : 'text-bad'}`}
-            >
-              {result ? '✓ Верно' : '✗ Неверно'}
-            </span>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold
+              ${result
+                ? 'bg-good/15 text-good border border-good/30'
+                : 'bg-bad/15 text-bad border border-bad/30'}`}>
+              {result ? (
+                <>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                  Верно
+                </>
+              ) : (
+                <>
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
+                  </svg>
+                  Неверно
+                </>
+              )}
+            </div>
           )}
         </div>
       )}
 
       {/* EXPLANATION */}
-      {submitted && !controlled && (
-        <div className="mt-4 card p-4 bg-panel2">
+      {submitted && !controlled && task.explanation && (
+        <div className="mt-4 card p-4 bg-panel2 border-l-4 !border-l-accent">
           {!result && task.type !== 'fill' && task.type !== 'single' && (
             <p className="text-sm mb-2">
               <span className="text-muted">Правильный ответ: </span>
-              <span className="font-mono text-good">{task.correct_answer}</span>
+              <span className="font-mono text-good font-semibold">{task.correct_answer}</span>
             </p>
           )}
           {!result && (task.type === 'fill' || (task.type === 'single' && task.options_letters === false)) && (
             <p className="text-sm mb-2">
               <span className="text-muted">Правильный ответ: </span>
-              <span className="text-good">{task.correct_answer}</span>
+              <span className="text-good font-semibold">{task.correct_answer}</span>
             </p>
           )}
-          <p className="text-sm leading-relaxed whitespace-pre-line">
-            <span className="text-muted">Пояснение: </span>
+          <p className="text-sm leading-relaxed whitespace-pre-line text-text">
+            <span className="text-accent2 font-medium">Пояснение: </span>
             {task.explanation}
           </p>
         </div>

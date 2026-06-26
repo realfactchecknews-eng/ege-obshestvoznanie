@@ -2,43 +2,231 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================================
+   ПАЛИТРА: светло-зелёная мята по умолчанию + тёмная тема
+   ============================================================ */
+:root {
+  /* Светлая тема — мята + белый */
+  --bg: #f6faf7;
+  --panel: #ffffff;
+  --panel2: #eff7f1;
+  --border: #d8ebde;
+  --border-soft: #e7f1ea;
+
+  --accent: #4ade80;
+  --accent-hover: #22c55e;
+  --accent-soft: rgba(74, 222, 128, 0.12);
+  --accent2: #15803d;
+
+  --good: #16a34a;
+  --bad: #ef4444;
+  --warn: #f59e0b;
+
+  --text: #0f1f14;
+  --text-soft: #4b5d52;
+  --muted: #7a8a80;
+
+  /* Полупрозрачные варианты для hover/focus */
+  --accent-ring: rgba(74, 222, 128, 0.40);
+  --accent-border: rgba(74, 222, 128, 0.50);
+  --good-soft: rgba(22, 163, 74, 0.10);
+  --bad-soft: rgba(239, 68, 68, 0.10);
+  --warn-soft: rgba(245, 158, 11, 0.10);
+  --bg-overlay: rgba(0, 0, 0, 0.50);
+}
+
+.dark {
+  /* Тёмная тема — глубокий лес + мятный акцент */
+  --bg: #0a1410;
+  --panel: #131c17;
+  --panel2: #1c2620;
+  --border: #28352d;
+  --border-soft: #1f2b24;
+
+  --accent: #4ade80;
+  --accent-hover: #86efac;
+  --accent-soft: rgba(74, 222, 128, 0.16);
+  --accent2: #86efac;
+
+  --good: #34d399;
+  --bad: #f87171;
+  --warn: #fbbf24;
+
+  --text: #e8efe9;
+  --text-soft: #b8c4bc;
+  --muted: #7d8a82;
+
+  --accent-ring: rgba(74, 222, 128, 0.40);
+  --accent-border: rgba(74, 222, 128, 0.40);
+  --good-soft: rgba(52, 211, 153, 0.12);
+  --bad-soft: rgba(248, 113, 113, 0.12);
+  --warn-soft: rgba(251, 191, 36, 0.12);
+  --bg-overlay: rgba(0, 0, 0, 0.65);
+}
+
+/* ============================================================
+   БАЗОВЫЕ СТИЛИ
+   ============================================================ */
 html {
   scroll-behavior: smooth;
 }
 
 body {
-  @apply bg-bg text-gray-100;
+  @apply bg-bg text-text;
   margin: 0;
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
+/* Плавный переход при смене темы */
+*, *::before, *::after {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 0.15s;
+  transition-timing-function: ease;
+}
+
+/* Скроллбар — общий для обеих тем */
 ::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0e14;
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #262c3b;
+  background: var(--border);
   border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #353d52;
+  background: var(--muted);
 }
 
+/* ============================================================
+   КОМПОНЕНТНЫЕ КЛАССЫ
+   ============================================================ */
 @layer components {
   .card {
-    @apply bg-panel border border-border rounded-xl;
+    @apply bg-panel border border-border rounded-xl shadow-soft-sm;
   }
+
+  .card-hover {
+    @apply card transition-all hover:shadow-soft-md;
+    border-color: var(--border);
+  }
+  .card-hover:hover {
+    border-color: var(--accent-border);
+  }
+
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply px-4 py-2 rounded-lg font-medium transition-all
+           disabled:opacity-50 disabled:cursor-not-allowed;
   }
+  .btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-ring);
+  }
+
   .btn-primary {
-    @apply btn bg-accent hover:opacity-90 text-white;
+    @apply btn text-white;
+    background-color: var(--accent);
   }
+  .btn-primary:hover {
+    background-color: var(--accent-hover);
+    box-shadow: 0 8px 24px -8px rgba(74, 222, 128, 0.45);
+  }
+
   .btn-ghost {
-    @apply btn bg-panel2 hover:bg-border text-gray-200 border border-border;
+    @apply btn border;
+    background-color: var(--panel2);
+    color: var(--text-soft);
+    border-color: var(--border);
+  }
+  .btn-ghost:hover {
+    background-color: var(--panel);
+    color: var(--text);
+    border-color: var(--accent-border);
+  }
+
+  .btn-outline {
+    @apply btn border;
+    background-color: transparent;
+    color: var(--accent2);
+    border-color: var(--accent-border);
+  }
+  .btn-outline:hover {
+    background-color: var(--accent-soft);
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+    background-color: var(--accent-soft);
+    color: var(--accent2);
+    border: 1px solid var(--accent-border);
+  }
+
+  .divider {
+    @apply h-px my-4;
+    background-color: var(--border);
+  }
+
+  /* Утилиты для полупрозрачных цветов */
+  .bg-accent-soft { background-color: var(--accent-soft); }
+  .bg-good-soft { background-color: var(--good-soft); }
+  .bg-bad-soft { background-color: var(--bad-soft); }
+  .bg-warn-soft { background-color: var(--warn-soft); }
+  .border-accent-soft { border-color: var(--accent-border); }
+  .text-good { color: var(--good); }
+  .text-bad { color: var(--bad); }
+  .text-warn { color: var(--warn); }
+  .text-muted { color: var(--muted); }
+  .text-accent { color: var(--accent); }
+  .text-accent2 { color: var(--accent2); }
+  .border-accent { border-color: var(--accent); }
+  .border-bad { border-color: var(--bad); }
+  .border-warn { border-color: var(--warn); }
+  .border-good { border-color: var(--good); }
+  .bg-accent { background-color: var(--accent); }
+  .bg-good { background-color: var(--good); }
+  .bg-bad { background-color: var(--bad); }
+  .bg-warn { background-color: var(--warn); }
+  .bg-muted\/40 { background-color: rgba(122, 138, 128, 0.4); }
+
+  .overlay {
+    background-color: var(--bg-overlay);
+  }
+}
+
+/* ============================================================
+   УТИЛИТЫ
+   ============================================================ */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  /* Градиенты */
+  .bg-gradient-hero {
+    background: linear-gradient(135deg, var(--accent-soft) 0%, transparent 60%);
+  }
+
+  .bg-gradient-accent {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  }
+
+  .border-l-accent {
+    border-left-color: var(--accent);
+  }
+
+  /* Focus ring с CSS-переменной */
+  .focus-ring:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--accent-ring);
   }
 }

@@ -6,9 +6,8 @@ export default function Flashcards() {
   const [topic, setTopic] = useState('all')
   const [flipped, setFlipped] = useState(false)
   const [idx, setIdx] = useState(0)
-  const [version, setVersion] = useState(0) // для пересборки очереди
+  const [version, setVersion] = useState(0)
 
-  // очередь: сначала «просроченные» по SRS, затем новые
   const queue = useMemo(() => {
     const flash = getFlash()
     const now = Date.now()
@@ -38,19 +37,35 @@ export default function Flashcards() {
 
   const flash = getFlash()
   const learned = terms.filter((t) => (flash[t.term]?.box ?? 0) >= 3).length
+  const pct = terms.length ? Math.round((learned / terms.length) * 100) : 0
+  const totalInTopic = topic === 'all' ? terms.length : terms.filter((t) => t.topic === topic).length
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-end justify-between flex-wrap gap-2">
-        <h1 className="text-2xl font-bold">Термины — карточки</h1>
-        <p className="text-sm text-muted">
-          Освоено: <span className="text-good font-semibold">{learned}</span> / {terms.length}
-        </p>
+    <div className="space-y-6 animate-slide-up">
+      <div className="flex items-end justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Карточки терминов</h1>
+          <p className="text-text-soft text-sm mt-1">
+            Интервальное повторение · Leitner · {terms.length} терминов
+          </p>
+        </div>
+        <div className="card px-4 py-2 flex items-center gap-3">
+          <div>
+            <p className="text-xs text-muted">Освоено</p>
+            <p className="font-bold text-accent2">
+              {learned} <span className="text-muted font-normal">/ {terms.length}</span>
+            </p>
+          </div>
+          <div className="w-16 h-1.5 rounded-full bg-panel2 overflow-hidden">
+            <div className="h-full bg-accent transition-all" style={{ width: `${pct}%` }} />
+          </div>
+        </div>
       </div>
 
+      {/* Фильтр + счётчик */}
       <div className="card p-4 flex flex-wrap items-center gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="text-muted text-xs">Раздел</span>
+        <label className="flex flex-col gap-1.5 text-sm min-w-[200px]">
+          <span className="text-muted text-xs font-medium uppercase tracking-wide">Раздел</span>
           <select
             value={topic}
             onChange={(e) => {
@@ -59,7 +74,8 @@ export default function Flashcards() {
               setFlipped(false)
               setVersion((v) => v + 1)
             }}
-            className="bg-bg border border-border rounded-lg px-3 py-2 outline-none focus:border-accent"
+            className="bg-panel2 border border-border rounded-lg px-3 py-2 outline-none
+                       focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
           >
             <option value="all">Все разделы</option>
             {TOPICS.map((t) => (
@@ -69,54 +85,81 @@ export default function Flashcards() {
             ))}
           </select>
         </label>
-        <p className="text-sm text-muted ml-auto">
-          Карточка {queue.length ? (idx % queue.length) + 1 : 0} из {queue.length}
-        </p>
+        <div className="ml-auto text-right">
+          <p className="text-xs text-muted">Карточка</p>
+          <p className="font-bold text-accent2">
+            {queue.length ? (idx % queue.length) + 1 : 0}
+            <span className="text-muted font-normal"> / {totalInTopic}</span>
+          </p>
+        </div>
       </div>
 
+      {/* Карточка */}
       {card ? (
-        <div>
+        <div className="space-y-4">
           <button
             onClick={() => setFlipped((f) => !f)}
-            className="card w-full min-h-[220px] p-8 flex flex-col items-center justify-center text-center hover:border-accent transition-colors"
+            className="card w-full min-h-[260px] p-8 flex flex-col items-center justify-center text-center
+                       hover:border-accent hover:shadow-accent transition-all group"
           >
             {!flipped ? (
               <>
-                <p className="text-xs uppercase tracking-wide text-muted mb-3">Термин</p>
-                <p className="text-2xl font-bold">{card.term}</p>
-                <p className="text-sm text-muted mt-4">Нажми, чтобы увидеть определение</p>
+                <span className="chip mb-4">Термин</span>
+                <p className="text-3xl font-bold text-balance max-w-md">{card.term}</p>
+                <p className="text-sm text-muted mt-6 flex items-center gap-2 group-hover:text-accent2 transition-colors">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 5v14M5 12l7 7 7-7" />
+                  </svg>
+                  Нажми, чтобы увидеть определение
+                </p>
               </>
             ) : (
               <>
-                <p className="text-xs uppercase tracking-wide text-muted mb-3">Определение</p>
-                <p className="text-lg leading-relaxed">{card.definition}</p>
+                <span className="chip mb-4">{card.topic}</span>
+                <p className="text-lg leading-relaxed text-balance max-w-xl text-text">
+                  {card.definition}
+                </p>
+                <p className="text-sm text-muted mt-6 flex items-center gap-2">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12l7-7 7 7M12 19V5" />
+                  </svg>
+                  Нажми, чтобы перевернуть
+                </p>
               </>
             )}
           </button>
 
           {flipped && (
-            <div className="grid grid-cols-2 gap-3 mt-4">
+            <div className="grid grid-cols-2 gap-3">
               <button
-                className="btn bg-bad/20 text-bad border border-bad/40 hover:bg-bad/30"
                 onClick={() => next(false)}
+                className="btn bg-bad/10 text-bad border border-bad/30 hover:bg-bad hover:text-white transition-all py-3 flex items-center justify-center gap-2"
               >
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
                 Не знал
               </button>
               <button
-                className="btn bg-good/20 text-good border border-good/40 hover:bg-good/30"
                 onClick={() => next(true)}
+                className="btn bg-good/10 text-good border border-good/30 hover:bg-good hover:text-white transition-all py-3 flex items-center justify-center gap-2"
               >
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 13l4 4L19 7" />
+                </svg>
                 Знал
               </button>
             </div>
           )}
         </div>
       ) : (
-        <p className="text-muted text-center py-10">Нет карточек в этом разделе.</p>
+        <div className="card p-10 text-center">
+          <p className="text-muted">Нет карточек в этом разделе.</p>
+        </div>
       )}
 
-      <p className="text-xs text-muted text-center">
-        Карточки, которые ты не знал, вернутся раньше (интервальное повторение).
+      <p className="text-xs text-muted text-center max-w-md mx-auto">
+        Карточки, которые ты не знал, вернутся раньше — система сама выбирает интервал (от 1 минуты до 16 дней).
       </p>
     </div>
   )
