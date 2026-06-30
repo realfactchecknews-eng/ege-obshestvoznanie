@@ -194,7 +194,7 @@ function BookTaskCard({
       </div>
 
       {task.text ? (
-        <p className="whitespace-pre-line leading-relaxed text-[15px] mb-3">{task.text}</p>
+        <TaskBody text={task.text} />
       ) : (
         <p className="text-sm text-muted italic mb-3">
           Текст задания не распознан — открой вариант {'«'}{task.num}{'»'} в сборнике/PDF, реши и впиши ответ для проверки.
@@ -287,7 +287,7 @@ function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw
       )}
 
       {task.text ? (
-        <p className="whitespace-pre-line leading-relaxed text-[15px] mb-4">{task.text}</p>
+        <TaskBody text={task.text} />
       ) : (
         <p className="text-sm text-muted italic mb-4">
           Текст задания не распознан чисто — открой вариант {variantHint(task)} в сборнике/PDF.
@@ -368,4 +368,105 @@ function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw
 
 function variantHint(task: BookPart2Task) {
   return `«№${task.num}»`
+}
+
+/* ===================== Разбор заданий "на соответствие" в таблицу ===================== */
+interface MatchingTable {
+  intro: string
+  left: { label: string; text: string }[]
+  right: { label: string; text: string }[]
+  outro: string
+}
+
+function parseMatchingTask(raw: string): MatchingTable | null {
+  if (!raw.includes('оответств')) return null
+
+  const letterSeq = ['А', 'Б', 'В', 'Г', 'Д', 'Е']
+  const letterRe = /(?:^|\n)\s*([АБВГДЕ])\)\s*/g
+  const numberRe = /(?:^|\n)\s*([1-6])\)\s*/g
+
+  const letterHits = [...raw.matchAll(letterRe)]
+  const numberHits = [...raw.matchAll(numberRe)]
+  if (letterHits.length < 2 || numberHits.length < 2) return null
+
+  // буквы должны идти строго по порядку А, Б, В…
+  for (let i = 0; i < letterHits.length; i++) {
+    if (letterHits[i][1] !== letterSeq[i]) return null
+  }
+  // цифры должны идти строго по порядку 1, 2, 3…
+  for (let i = 0; i < numberHits.length; i++) {
+    if (Number(numberHits[i][1]) !== i + 1) return null
+  }
+  // буквенный список должен предшествовать числовому
+  const firstNumberStart = numberHits[0].index ?? -1
+  const lastLetterStart = letterHits[letterHits.length - 1].index ?? -1
+  if (firstNumberStart < lastLetterStart) return null
+
+  const intro = raw.slice(0, letterHits[0].index).trim()
+
+  const left: { label: string; text: string }[] = []
+  for (let i = 0; i < letterHits.length; i++) {
+    const start = (letterHits[i].index ?? 0) + letterHits[i][0].length
+    const end = i + 1 < letterHits.length ? letterHits[i + 1].index : numberHits[0].index
+    left.push({ label: letterHits[i][1], text: raw.slice(start, end).replace(/\n/g, ' ').trim() })
+  }
+
+  const right: { label: string; text: string }[] = []
+  const tailMarker = raw.search(/(?:^|\n)\s*Запишите/i)
+  for (let i = 0; i < numberHits.length; i++) {
+    const start = (numberHits[i].index ?? 0) + numberHits[i][0].length
+    let end: number | undefined
+    if (i + 1 < numberHits.length) end = numberHits[i + 1].index
+    else end = tailMarker >= 0 ? tailMarker : raw.length
+    right.push({ label: numberHits[i][1], text: raw.slice(start, end).replace(/\n/g, ' ').trim() })
+  }
+
+  // если в каком-то пункте почти пусто или подозрительно длинно — разбор ненадёжен, лучше не рисковать
+  const allItems = [...left, ...right]
+  if (allItems.some((it) => it.text.length < 2 || it.text.length > 220)) return null
+  // не должно оставаться "хвостов" предыдущего пункта в виде самостоятельной заглавной строки внутри текста
+  if (allItems.some((it) => /^[А-ЯЁ\s]{6,}$/.test(it.text))) return null
+
+  const outro = tailMarker >= 0 ? raw.slice(tailMarker).trim() : ''
+
+  return { intro, left, right, outro }
+}
+
+function MatchingTableView({ table }: { table: MatchingTable }) {
+  return (
+    <div className="mb-3">
+      {table.intro && <p className="whitespace-pre-line leading-relaxed text-[15px] mb-3">{table.intro}</p>}
+      <div className="overflow-x-auto rounded-lg border border-border">
+        <table className="w-full text-sm border-collapse">
+          <tbody>
+            {table.left.map((l, i) => (
+              <tr key={l.label} className={i % 2 ? 'bg-panel2' : ''}>
+                <td className="align-top px-3 py-2 font-mono font-bold w-10 border-r border-border-soft">{l.label}</td>
+                <td className="align-top px-3 py-2 border-r border-border-soft">{l.text}</td>
+                <td className="align-top px-3 py-2 font-mono font-bold w-10 border-r border-border-soft">
+                  {table.right[i] ? table.right[i].label : ''}
+                </td>
+                <td className="align-top px-3 py-2">{table.right[i] ? table.right[i].text : ''}</td>
+              </tr>
+            ))}
+            {table.right.slice(table.left.length).map((r) => (
+              <tr key={`extra-${r.label}`}>
+                <td className="px-3 py-2 border-r border-border-soft" />
+                <td className="px-3 py-2 border-r border-border-soft" />
+                <td className="align-top px-3 py-2 font-mono font-bold w-10 border-r border-border-soft">{r.label}</td>
+                <td className="align-top px-3 py-2">{r.text}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {table.outro && <p className="whitespace-pre-line leading-relaxed text-[15px] mt-3">{table.outro}</p>}
+    </div>
+  )
+}
+
+function TaskBody({ text }: { text: string }) {
+  const table = useMemo(() => parseMatchingTask(text), [text])
+  if (table) return <MatchingTableView table={table} />
+  return <p className="whitespace-pre-line leading-relaxed text-[15px] mb-3">{text}</p>
 }
