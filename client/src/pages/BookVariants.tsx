@@ -276,6 +276,16 @@ function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw
         )}
       </div>
 
+      {task.graph && (
+        <div className="float-right ml-4 mb-3 w-44 sm:w-56 shrink-0">
+          <img
+            src={`${import.meta.env.BASE_URL}${task.graph}`}
+            alt={`График к заданию ${task.num}`}
+            className="w-full rounded-lg border border-border bg-white"
+          />
+        </div>
+      )}
+
       {task.text ? (
         <p className="whitespace-pre-line leading-relaxed text-[15px] mb-4">{task.text}</p>
       ) : (
@@ -283,6 +293,8 @@ function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw
           Текст задания не распознан чисто — открой вариант {variantHint(task)} в сборнике/PDF.
         </p>
       )}
+
+      <div className="clear-both" />
 
       <textarea
         rows={5}

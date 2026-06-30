@@ -14,6 +14,7 @@ export interface BookPart2Task {
   text: string | null
   source_text?: string | null
   report_topic?: string
+  graph?: string
 }
 
 export interface BookVariant {
