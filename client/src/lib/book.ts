@@ -6,6 +6,7 @@ export interface BookTask {
   kind: 'ordered' | 'unordered'
   image: boolean
   text: string | null
+  graphImage?: string
 }
 
 export interface BookPart2Task {

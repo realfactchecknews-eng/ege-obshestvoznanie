@@ -201,6 +201,14 @@ function BookTaskCard({
         </p>
       )}
 
+      {task.graphImage && (
+        <img
+          src={`${import.meta.env.BASE_URL}${task.graphImage}`}
+          alt={`Диаграмма к заданию ${task.num}`}
+          className="w-full max-w-xl rounded-lg border border-border bg-white mb-3"
+        />
+      )}
+
       <div className="flex flex-wrap items-center gap-3">
         <input
           value={value}
