@@ -7,9 +7,20 @@ export interface BookTask {
   image: boolean
   text: string | null
 }
+
+export interface BookPart2Task {
+  num: number
+  topic: string
+  text: string | null
+  source_text?: string | null
+  report_topic?: string
+}
+
 export interface BookVariant {
   variant: number
   tasks: BookTask[]
+  part2: BookPart2Task[]
+  criteria_raw: string
 }
 
 export const bookVariants = bookJson as BookVariant[]

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
-import { bookVariants, checkBookAnswer, kindLabel, type BookVariant, type BookTask } from '../lib/book'
+import { bookVariants, checkBookAnswer, kindLabel, type BookVariant, type BookTask, type BookPart2Task } from '../lib/book'
 import { addAnswer, getBookScores, setBookScore, todayStr } from '../lib/storage'
+import { checkEssay, aiAvailable, type EssayCheck } from '../lib/ai'
+import type { Task } from '../types'
 
 export default function BookVariants() {
   const [open, setOpen] = useState<number | null>(null)
@@ -26,8 +28,9 @@ function VariantPicker({ onPick }: { onPick: (v: number) => void }) {
           <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
         </svg>
         <span>
-          Тексты заданий распознаны из PDF и местами неполны — у части заданий показан только номер и поле для ответа
-          (решай по сборнику/PDF, а здесь проверяй). Развёрнутые задания 17–25 и иллюстрации добавим позже.
+          Тексты распознаны из PDF — большинство заданий читается чисто, но местами встречаются опечатки OCR.
+          Часть 1 (1–16) — автопроверка по официальному ключу. Часть 2 (17–25) — со своим текстом на вариант
+          и официальными критериями оценивания из книги; письменные ответы можно проверить через ИИ.
         </span>
       </div>
 
@@ -141,10 +144,17 @@ function VariantView({ variant, onExit }: { variant: BookVariant; onExit: () => 
         ))}
       </div>
 
-      {/* Заглушка для части 2 */}
-      <div className="card p-5 border-dashed text-center text-text-soft">
-        <p className="font-medium">Часть 2 (задания 17–25)</p>
-        <p className="text-sm text-muted mt-1">Развёрнутые задания и ответы добавим позже. Сейчас доступна часть 1.</p>
+      {/* Часть 2 */}
+      <div className="pt-2">
+        <h2 className="text-xl md:text-2xl font-bold mb-1">Вариант {variant.variant} · Часть 2</h2>
+        <p className="text-sm text-text-soft mb-4">
+          Развёрнутые ответы (17–25). Сверяйся с официальными критериями книги — кнопка под каждым заданием.
+        </p>
+        <div className="space-y-4">
+          {variant.part2.map((t) => (
+            <Part2TaskCard key={t.num} task={t} criteriaRaw={variant.criteria_raw} />
+          ))}
+        </div>
       </div>
 
       {!submitted ? (
@@ -219,4 +229,131 @@ function BookTaskCard({
       </div>
     </div>
   )
+}
+
+/* ===================== Карточка задания части 2 ===================== */
+function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw: string }) {
+  const [answer, setAnswer] = useState('')
+  const [showCriteria, setShowCriteria] = useState(false)
+  const [aiBusy, setAiBusy] = useState(false)
+  const [aiResult, setAiResult] = useState<EssayCheck | null>(null)
+  const [aiError, setAiError] = useState<string | null>(null)
+
+  async function runAiCheck() {
+    setAiError(null)
+    setAiBusy(true)
+    try {
+      const aiTask: Task = {
+        id: task.num,
+        year: 2026,
+        task_number: task.num,
+        type: 'written',
+        topic: 'Сборник ЕГЭ',
+        subtopic: task.topic,
+        question: task.text ?? '',
+        options: [],
+        correct_answer: '',
+        criteria: [],
+        explanation: '',
+        source: 'Котова, Лискова — типовые варианты 2026',
+      }
+      const res = await checkEssay(aiTask, answer)
+      setAiResult(res)
+    } catch (e) {
+      setAiError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
+  return (
+    <div className="card p-4 md:p-5">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className="chip"><span className="font-mono font-bold">№ {task.num}</span></span>
+        <span className="text-xs text-muted">{task.topic}</span>
+        {task.report_topic && (
+          <span className="chip !bg-accent/15 !text-accent2 !border-accent/30">«{task.report_topic}»</span>
+        )}
+      </div>
+
+      {task.text ? (
+        <p className="whitespace-pre-line leading-relaxed text-[15px] mb-4">{task.text}</p>
+      ) : (
+        <p className="text-sm text-muted italic mb-4">
+          Текст задания не распознан чисто — открой вариант {variantHint(task)} в сборнике/PDF.
+        </p>
+      )}
+
+      <textarea
+        rows={5}
+        value={answer}
+        onChange={(e) => setAnswer(e.target.value)}
+        placeholder="Введите развёрнутый ответ..."
+        className="w-full px-4 py-3 rounded-lg border-2 border-border bg-panel2 outline-none
+                   focus:border-accent focus:ring-2 focus:ring-accent/20 resize-y text-sm leading-relaxed mb-3"
+      />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          className="btn-primary flex items-center gap-2 disabled:opacity-60"
+          onClick={runAiCheck}
+          disabled={aiBusy || !answer.trim() || !aiAvailable}
+          title={!aiAvailable ? 'ИИ-проверка включится после настройки аккаунта (Supabase)' : ''}
+        >
+          {aiBusy ? 'Проверяю…' : 'Проверить с ИИ'}
+        </button>
+        <button className="btn-outline" onClick={() => setShowCriteria((v) => !v)}>
+          {showCriteria ? 'Скрыть' : 'Показать'} критерии из книги
+        </button>
+        {!aiAvailable && <span className="text-xs text-muted">ИИ-проверка включится после настройки аккаунта</span>}
+      </div>
+
+      {aiError && (
+        <p className="text-sm text-bad bg-bad/10 rounded-lg px-3 py-2 mt-3">Ошибка проверки: {aiError}</p>
+      )}
+
+      {aiResult && (
+        <div className="card p-4 bg-panel2 animate-fade-in space-y-3 mt-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs uppercase tracking-wide text-accent2 font-semibold">Оценка ИИ</p>
+            <span className={`font-bold text-lg ${aiResult.score >= aiResult.maxScore ? 'text-good' : aiResult.score > 0 ? 'text-warn' : 'text-bad'}`}>
+              {aiResult.score} <span className="text-muted font-normal text-sm">/ {aiResult.maxScore} баллов</span>
+            </span>
+          </div>
+          <div className="space-y-2">
+            {aiResult.perCriterion?.map((c, i) => (
+              <div key={i} className="flex items-start gap-2.5 text-sm">
+                <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5 ${c.met ? 'bg-good text-white' : 'bg-bad text-white'}`}>
+                  {c.met ? '✓' : '✗'}
+                </span>
+                <div>
+                  <p className="text-text-soft">{c.criterion}</p>
+                  {c.comment && <p className="text-xs text-muted mt-0.5">{c.comment}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+          {aiResult.overall && (
+            <p className="text-sm leading-relaxed text-text border-t border-border-soft pt-3">
+              <span className="text-accent2 font-medium">Итог: </span>{aiResult.overall}
+            </p>
+          )}
+          <p className="text-[11px] text-muted">ИИ-оценка ориентировочна и может отличаться от реального эксперта ФИПИ.</p>
+        </div>
+      )}
+
+      {showCriteria && (
+        <div className="card p-4 bg-panel2 mt-3 max-h-[420px] overflow-y-auto">
+          <p className="text-xs uppercase tracking-wide text-accent2 font-semibold mb-2">
+            Официальные критерии оценивания (весь вариант, из книги)
+          </p>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-text-soft">{criteriaRaw}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function variantHint(task: BookPart2Task) {
+  return `«№${task.num}»`
 }
