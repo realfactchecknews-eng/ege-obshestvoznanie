@@ -65,17 +65,17 @@ export function StreakFlame({ variant = 'full' }: { variant?: 'full' | 'compact'
 
       {/* Полоса активности за неделю */}
       <div className="flex items-end justify-between gap-1.5">
-        {days.map((d) => (
-          <div key={d.date} className="flex flex-col items-center gap-1.5 flex-1">
+        {days.map((d, i) => (
+          <div key={d.date} className="flex flex-col items-center gap-1.5 flex-1 animate-pop-in" style={{ animationDelay: `${i * 50}ms` }}>
             <div
-              className={`w-full aspect-square rounded-lg flex items-center justify-center transition-all
+              className={`w-full aspect-square rounded-lg flex items-center justify-center transition-all duration-300 ease-spring
                 ${d.active
-                  ? 'bg-accent text-white shadow-accent'
+                  ? 'bg-accent text-white shadow-accent scale-100 hover:scale-110'
                   : 'bg-panel2 border border-border-soft text-muted'}
                 ${d.today ? 'ring-2 ring-accent/50' : ''}`}
             >
               {d.active ? (
-                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 animate-check-pop" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M5 13l4 4L19 7" />
                 </svg>
               ) : (

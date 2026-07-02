@@ -116,31 +116,33 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
                   setSingle(opt)
                   emitChange({ single: opt })
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all flex items-start gap-3
+                className={`w-full text-left px-4 py-3 rounded-lg border-2 flex items-start gap-3
+                  transition-[background-color,border-color,box-shadow,transform] duration-200 ease-smooth
+                  ${!disabled ? 'active:scale-[0.98]' : ''}
                   ${isCorrect
                     ? 'border-good bg-good/10 shadow-[0_0_0_1px_rgba(52,211,153,0.3)]'
                     : isWrong
                     ? 'border-bad bg-bad/10'
                     : sel
                     ? 'border-accent bg-accent-soft'
-                    : 'border-border bg-panel2 hover:border-accent/50 hover:bg-panel'}`}
+                    : 'border-border bg-panel2 hover:border-accent/50 hover:bg-panel hover:-translate-y-0.5'}`}
               >
                 {showLetter && (
-                  <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold
+                  <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300
                     ${isCorrect ? 'bg-good text-white' :
                       isWrong ? 'bg-bad text-white' :
-                      sel ? 'bg-accent text-white' : 'bg-panel border border-border text-text-soft'}`}>
+                      sel ? 'bg-accent text-white scale-110' : 'bg-panel border border-border text-text-soft'}`}>
                     {String.fromCharCode(1040 + i)}
                   </span>
                 )}
                 <span className="flex-1 pt-0.5">{opt}</span>
                 {isCorrect && (
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-good shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-good shrink-0 mt-0.5 animate-check-pop" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                 )}
                 {isWrong && (
-                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-bad shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-bad shrink-0 mt-0.5 animate-check-pop" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 )}
@@ -175,25 +177,37 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
                   setMulti(n)
                   emitChange({ multi: n })
                 }}
-                className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all flex items-start gap-3
+                className={`w-full text-left px-4 py-3 rounded-lg border-2 flex items-start gap-3
+                  transition-[background-color,border-color,box-shadow,transform] duration-200 ease-smooth
+                  ${!disabled ? 'active:scale-[0.98]' : ''}
                   ${isCorrect
                     ? 'border-good bg-good/10'
                     : isWrong
                     ? 'border-bad bg-bad/10'
                     : sel
                     ? 'border-accent bg-accent-soft'
-                    : 'border-border bg-panel2 hover:border-accent/50 hover:bg-panel'}`}
+                    : 'border-border bg-panel2 hover:border-accent/50 hover:bg-panel hover:-translate-y-0.5'}`}
               >
-                <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold
+                <span className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300
                   ${isCorrect ? 'bg-good text-white' :
                     isWrong ? 'bg-bad text-white' :
-                    sel ? 'bg-accent text-white' : 'bg-panel border border-border text-text-soft'}`}>
+                    sel ? 'bg-accent text-white scale-110' : 'bg-panel border border-border text-text-soft'}`}>
                   {i + 1}
                 </span>
                 <span className="flex-1 pt-0.5">{opt}</span>
                 {sel && !submitted && (
-                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-accent2 shrink-0 mt-1" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-accent2 shrink-0 mt-1 animate-check-pop" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {isCorrect && (
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-good shrink-0 mt-1 animate-check-pop" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+                {isWrong && (
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-bad shrink-0 mt-1 animate-check-pop" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 )}
               </button>
@@ -245,7 +259,7 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
                     }}
                     className="bg-panel border border-border rounded-lg px-3 py-1.5 text-sm font-medium
                                focus:border-accent focus:ring-2 focus:ring-accent/20 outline-none
-                               disabled:opacity-60"
+                               disabled:opacity-60 transition-all duration-200 hover:border-accent/50"
                   >
                     <option value={0}>—</option>
                     {task.match_right!.map((_, j) => (
@@ -442,20 +456,20 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
               Проверить
             </button>
           ) : (
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold animate-pop-in
               ${result
                 ? 'bg-good/15 text-good border border-good/30'
                 : 'bg-bad/15 text-bad border border-bad/30'}`}>
               {result ? (
                 <>
-                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 animate-check-pop" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                   Верно
                 </>
               ) : (
                 <>
-                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 animate-check-pop" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                   Неверно
@@ -468,7 +482,7 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
 
       {/* EXPLANATION */}
       {submitted && !controlled && task.explanation && (
-        <div className="mt-4 card p-4 bg-panel2 border-l-4 !border-l-accent">
+        <div className="mt-4 card p-4 bg-panel2 border-l-4 !border-l-accent animate-slide-down">
           {!result && task.type !== 'fill' && task.type !== 'single' && (
             <p className="text-sm mb-2">
               <span className="text-muted">Правильный ответ: </span>

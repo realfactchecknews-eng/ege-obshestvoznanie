@@ -101,7 +101,7 @@ export default function Practice({ initialTopics }: { initialTopics?: string[] }
 
       {/* Пусто */}
       {filtered.length === 0 && (
-        <div className="card p-10 text-center">
+        <div className="card p-10 text-center animate-scale-in">
           <p className="text-muted">Нет заданий по выбранным фильтрам.</p>
           <p className="text-xs text-muted mt-1">Попробуй сбросить фильтры.</p>
         </div>
@@ -109,10 +109,10 @@ export default function Practice({ initialTopics }: { initialTopics?: string[] }
 
       {/* Лента */}
       <div className="space-y-5">
-        {filtered.map((t) => {
+        {filtered.map((t, i) => {
           const s = perNumberStats.get(t.task_number)
           return (
-            <div key={t.id}>
+            <div key={t.id} className="animate-slide-up" style={{ animationDelay: `${Math.min(i, 8) * 45}ms` }}>
               {s && (
                 <p className="text-xs text-muted mb-1.5 ml-1 flex items-center gap-2">
                   <span className="chip !px-2 !py-0.5 !text-[10px]">№ {t.task_number}</span>

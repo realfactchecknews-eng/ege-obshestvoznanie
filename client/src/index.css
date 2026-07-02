@@ -33,6 +33,10 @@
   --bad-soft: rgba(239, 68, 68, 0.10);
   --warn-soft: rgba(245, 158, 11, 0.10);
   --bg-overlay: rgba(0, 0, 0, 0.50);
+
+  /* Кривые для плавных анимаций */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark {
@@ -77,14 +81,24 @@ body {
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.25s var(--ease-smooth), color 0.25s var(--ease-smooth);
 }
 
 /* Плавный переход при смене темы */
 *, *::before, *::after {
   transition-property: background-color, border-color, color, fill, stroke;
-  transition-duration: 0.15s;
-  transition-timing-function: ease;
+  transition-duration: 0.18s;
+  transition-timing-function: var(--ease-smooth);
+}
+
+/* Уважаем настройку "меньше анимаций" на уровне ОС */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Скроллбар — общий для обеих тем */
@@ -109,6 +123,7 @@ body {
 @layer components {
   .card {
     @apply bg-panel border border-border rounded-xl shadow-soft-sm;
+    transition: box-shadow 0.3s var(--ease-smooth), border-color 0.3s var(--ease-smooth), transform 0.3s var(--ease-smooth);
   }
 
   .card-hover {
@@ -117,24 +132,35 @@ body {
   }
   .card-hover:hover {
     border-color: var(--accent-border);
+    transform: translateY(-2px);
   }
 
   .btn {
-    @apply px-4 py-2 rounded-lg font-medium transition-all
+    @apply px-4 py-2 rounded-lg font-medium
            disabled:opacity-50 disabled:cursor-not-allowed;
+    transition: background-color 0.2s var(--ease-smooth), color 0.2s var(--ease-smooth),
+                border-color 0.2s var(--ease-smooth), box-shadow 0.25s var(--ease-smooth),
+                transform 0.15s var(--ease-spring);
   }
   .btn:focus {
     outline: none;
     box-shadow: 0 0 0 2px var(--accent-ring);
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.96);
   }
 
   .btn-primary {
     @apply btn text-white;
     background-color: var(--accent);
   }
-  .btn-primary:hover {
+  .btn-primary:hover:not(:disabled) {
     background-color: var(--accent-hover);
     box-shadow: 0 8px 24px -8px rgba(74, 222, 128, 0.45);
+    transform: translateY(-1px);
+  }
+  .btn-primary:active:not(:disabled) {
+    transform: scale(0.96);
   }
 
   .btn-ghost {
@@ -164,6 +190,7 @@ body {
     background-color: var(--accent-soft);
     color: var(--accent2);
     border: 1px solid var(--accent-border);
+    transition: background-color 0.2s var(--ease-smooth), transform 0.2s var(--ease-spring);
   }
 
   .divider {
@@ -228,5 +255,25 @@ body {
   .focus-ring:focus {
     outline: none;
     box-shadow: 0 0 0 2px var(--accent-ring);
+  }
+
+  /* Мерцающий skeleton-фон для состояний загрузки */
+  .skeleton {
+    background: linear-gradient(90deg, var(--panel2) 25%, var(--border-soft) 50%, var(--panel2) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+
+  /* Плавная растяжка ширины (для полос прогресса) */
+  .transition-width {
+    transition: width 0.6s var(--ease-smooth);
+  }
+
+  /* Лёгкий "подъём" карточки при наведении, чуть заметнее card-hover */
+  .lift-on-hover {
+    transition: transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-smooth);
+  }
+  .lift-on-hover:hover {
+    transform: translateY(-3px);
   }
 }

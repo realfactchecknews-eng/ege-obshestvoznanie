@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getAnswers, solvedToday, getVariants } from '../lib/storage'
 import { tasks, TOPICS } from '../lib/data'
 import { StreakFlame } from '../components/StreakFlame'
@@ -72,12 +72,14 @@ export default function Dashboard({ go }: { go: (v: string) => void }) {
       {/* ===== МЕТРИКИ ===== */}
       <section className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
         <MetricCard
+          delay={0}
           icon={<IconCheck />}
           label="Всего решено"
           value={stats.total}
           tone="neutral"
         />
         <MetricCard
+          delay={60}
           icon={<IconPercent />}
           label="Точность"
           value={stats.pct}
@@ -85,6 +87,7 @@ export default function Dashboard({ go }: { go: (v: string) => void }) {
           tone={stats.pct >= 80 ? 'good' : stats.pct >= 60 ? 'warn' : stats.total > 0 ? 'bad' : 'neutral'}
         />
         <MetricCard
+          delay={120}
           icon={<IconTrophy />}
           label="Лучший балл"
           value={bestVariantScore(variants)}
@@ -101,6 +104,7 @@ export default function Dashboard({ go }: { go: (v: string) => void }) {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           <ActionCard
+            delay={0}
             icon={<IconPencil />}
             title="Задания"
             desc={`${tasks.length} реальных заданий ФИПИ с проверкой и пояснениями`}
@@ -108,30 +112,35 @@ export default function Dashboard({ go }: { go: (v: string) => void }) {
             accent
           />
           <ActionCard
+            delay={40}
             icon={<IconBook />}
             title="Теория"
             desc="6 разделов кодификатора с ключевыми терминами"
             onClick={() => go('theory')}
           />
           <ActionCard
+            delay={80}
             icon={<IconTimer />}
             title="Вариант целиком"
             desc="Полный экзамен: 3 ч 55 мин, таймер, авто-проверка"
             onClick={() => go('variant')}
           />
           <ActionCard
+            delay={120}
             icon={<IconTarget />}
             title="Слабые места"
             desc="Аналитика по темам и номерам заданий"
             onClick={() => go('weak')}
           />
           <ActionCard
+            delay={160}
             icon={<IconCards />}
             title="Карточки"
             desc="Интервальное повторение терминов (Leitner)"
             onClick={() => go('flash')}
           />
           <ActionCard
+            delay={200}
             icon={<IconReset />}
             title="Сбросить прогресс"
             desc="Очистить всю статистику ответов"
@@ -252,8 +261,15 @@ function ProgressRing({
   const c = 2 * Math.PI * r
   const offset = c - (value / 100) * c
 
+  // Кольцо "дорисовывается" от нуля при монтировании, а не сразу прыгает к значению
+  const [drawn, setDrawn] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setDrawn(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   return (
-    <div className="relative" style={{ width: size, height: size }}>
+    <div className="relative animate-scale-in" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         <circle
           cx={size / 2}
@@ -271,9 +287,9 @@ function ProgressRing({
           strokeWidth={stroke}
           fill="none"
           strokeDasharray={c}
-          strokeDashoffset={offset}
+          strokeDashoffset={drawn ? offset : c}
           strokeLinecap="round"
-          style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+          style={{ transition: 'stroke-dashoffset 1s var(--ease-smooth)' }}
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
@@ -286,7 +302,7 @@ function ProgressRing({
 
 /** Карточка метрики */
 function MetricCard({
-  icon, label, value, sublabel, suffix, tone = 'neutral',
+  icon, label, value, sublabel, suffix, tone = 'neutral', delay = 0,
 }: {
   icon: React.ReactNode
   label: string
@@ -294,6 +310,7 @@ function MetricCard({
   sublabel?: string
   suffix?: string
   tone?: 'accent' | 'good' | 'warn' | 'bad' | 'neutral'
+  delay?: number
 }) {
   const toneCls = {
     accent: 'text-accent2 bg-accent-soft',
@@ -304,14 +321,17 @@ function MetricCard({
   }[tone]
 
   return (
-    <div className="card p-4 hover:shadow-soft-md transition-shadow">
+    <div
+      className="card p-4 lift-on-hover hover:shadow-soft-md animate-pop-in"
+      style={{ animationDelay: `${delay}ms` }}
+    >
       <div className="flex items-start justify-between gap-2">
         <p className="text-xs text-muted font-medium uppercase tracking-wide">{label}</p>
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${toneCls}`}>
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center transition-transform duration-300 ${toneCls}`}>
           {icon}
         </div>
       </div>
-      <p className="text-2xl md:text-3xl font-bold mt-2">
+      <p className="text-2xl md:text-3xl font-bold mt-2 tabular-nums">
         {value}
         {suffix && <span className="text-base font-medium ml-1">{suffix}</span>}
       </p>
@@ -322,7 +342,7 @@ function MetricCard({
 
 /** Карточка быстрого действия */
 function ActionCard({
-  icon, title, desc, onClick, accent, danger,
+  icon, title, desc, onClick, accent, danger, delay = 0,
 }: {
   icon: React.ReactNode
   title: string
@@ -330,6 +350,7 @@ function ActionCard({
   onClick: () => void
   accent?: boolean
   danger?: boolean
+  delay?: number
 }) {
   const cls = accent
     ? 'border-accent/30 bg-accent-soft/40 hover:bg-accent-soft hover:border-accent hover:shadow-accent'
@@ -340,10 +361,11 @@ function ActionCard({
   return (
     <button
       onClick={onClick}
-      className={`card p-5 text-left transition-all group ${cls}`}
+      className={`card p-5 text-left transition-all group animate-pop-in hover:-translate-y-0.5 active:scale-[0.98] ${cls}`}
+      style={{ animationDelay: `${delay}ms` }}
     >
       <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-colors
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 transition-all duration-300 group-hover:scale-110
           ${accent ? 'bg-accent text-white' :
             danger ? 'bg-bad/10 text-bad group-hover:bg-bad group-hover:text-white' :
             'bg-accent-soft text-accent2 group-hover:bg-accent group-hover:text-white'}`}>
@@ -369,6 +391,13 @@ function TopicRow({ topic, pct, correct, total }: { topic: string; pct: number |
   const color = pct === null ? 'bg-muted/40' : pct < 60 ? 'bg-bad' : pct < 80 ? 'bg-warn' : 'bg-good'
   const textColor = pct === null ? 'text-muted' : pct < 60 ? 'text-bad' : pct < 80 ? 'text-warn' : 'text-good'
 
+  // Полоса "наливается" от нуля при монтировании
+  const [drawn, setDrawn] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setDrawn(true))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   return (
     <div>
       <div className="flex justify-between items-baseline mb-1.5">
@@ -379,8 +408,8 @@ function TopicRow({ topic, pct, correct, total }: { topic: string; pct: number |
       </div>
       <div className="h-2 rounded-full bg-panel2 overflow-hidden">
         <div
-          className={`h-full ${color} transition-all duration-500`}
-          style={{ width: `${pct ?? 0}%` }}
+          className={`h-full rounded-full ${color} transition-width duration-700`}
+          style={{ width: drawn ? `${pct ?? 0}%` : '0%' }}
         />
       </div>
       {total > 0 && (

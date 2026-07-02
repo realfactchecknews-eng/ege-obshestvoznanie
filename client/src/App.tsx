@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactElement } from 'react'
 import Dashboard from './pages/Dashboard'
 import Theory from './pages/Theory'
@@ -27,11 +27,47 @@ export default function App() {
   const [view, setView] = useState<View>('dashboard')
   const [weakTopics, setWeakTopics] = useState<string[] | undefined>(undefined)
   const { theme, toggle } = useTheme()
+  const navRef = useRef<HTMLElement>(null)
+  const btnRefs = useRef<Map<View, HTMLButtonElement>>(new Map())
+  const [indicator, setIndicator] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
 
   function go(v: string) {
     setWeakTopics(undefined)
     setView(v as View)
   }
+
+  // viewRef всегда содержит АКТУАЛЬНОЕ значение view — обработчик resize/observer
+  // ниже создаётся один раз при монтировании и не должен захватывать view в замыкании,
+  // иначе при смене вкладки во время ресайза плашка может "уехать" на старую позицию.
+  const viewRef = useRef(view)
+  viewRef.current = view
+
+  function recalcIndicator() {
+    const btn = btnRefs.current.get(viewRef.current)
+    if (!btn) return
+    setIndicator({ top: btn.offsetTop, left: btn.offsetLeft, width: btn.offsetWidth, height: btn.offsetHeight })
+  }
+
+  useLayoutEffect(() => {
+    recalcIndicator()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view])
+
+  // Пересчитать позицию плашки при ресайзе/переключении мобильной-десктопной раскладки.
+  // Подписка живёт один раз за всё время жизни компонента (не пересоздаётся при смене view),
+  // поэтому обработчик всегда читает актуальный view через viewRef — гонки исключены.
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const ro = new ResizeObserver(() => recalcIndicator())
+    ro.observe(nav)
+    window.addEventListener('resize', recalcIndicator)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', recalcIndicator)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -69,20 +105,37 @@ export default function App() {
         </div>
 
         {/* Навигация */}
-        <nav className="flex md:flex-col gap-1 p-2 overflow-x-auto md:flex-1">
+        <nav ref={navRef} className="relative flex md:flex-col gap-1 p-2 overflow-x-auto md:flex-1">
+          {/* Плавно скользящая плашка активного пункта */}
+          {indicator && (
+            <div
+              className="absolute rounded-lg bg-accent-soft border border-accent/30 pointer-events-none"
+              style={{
+                top: indicator.top,
+                left: indicator.left,
+                width: indicator.width,
+                height: indicator.height,
+                transition: 'top 0.35s var(--ease-spring), left 0.35s var(--ease-spring), width 0.35s var(--ease-spring), height 0.35s var(--ease-spring)',
+              }}
+            />
+          )}
           {NAV.map((n) => {
             const active = view === n.id
             return (
               <button
                 key={n.id}
+                ref={(el) => {
+                  if (el) btnRefs.current.set(n.id, el)
+                  else btnRefs.current.delete(n.id)
+                }}
                 onClick={() => go(n.id)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm whitespace-nowrap transition-all
+                className={`relative z-10 flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm whitespace-nowrap transition-colors duration-200
                   ${active
-                    ? 'bg-accent-soft text-accent2 font-semibold border border-accent/30'
-                    : 'text-text-soft hover:bg-panel2 hover:text-text border border-transparent'
+                    ? 'text-accent2 font-semibold'
+                    : 'text-text-soft hover:bg-panel2 hover:text-text'
                   }`}
               >
-                <span className={`flex items-center justify-center w-5 h-5 ${active ? 'text-accent2' : 'text-muted'}`}>
+                <span className={`flex items-center justify-center w-5 h-5 transition-transform duration-300 ${active ? 'text-accent2 scale-110' : 'text-muted'}`}>
                   {n.icon()}
                 </span>
                 {n.label}
@@ -106,21 +159,23 @@ export default function App() {
       </aside>
 
       {/* Контент */}
-      <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full animate-fade-in">
-        {view === 'dashboard' && <Dashboard go={go} />}
-        {view === 'theory' && <Theory />}
-        {view === 'practice' && <Practice initialTopics={weakTopics} />}
-        {view === 'variant' && <Variant />}
-        {view === 'book' && <BookVariants />}
-        {view === 'weak' && (
-          <WeakSpots
-            practiceWeak={(topics) => {
-              setWeakTopics(topics)
-              setView('practice')
-            }}
-          />
-        )}
-        {view === 'flash' && <Flashcards />}
+      <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full">
+        <div key={view} className="animate-slide-up">
+          {view === 'dashboard' && <Dashboard go={go} />}
+          {view === 'theory' && <Theory />}
+          {view === 'practice' && <Practice initialTopics={weakTopics} />}
+          {view === 'variant' && <Variant />}
+          {view === 'book' && <BookVariants />}
+          {view === 'weak' && (
+            <WeakSpots
+              practiceWeak={(topics) => {
+                setWeakTopics(topics)
+                setView('practice')
+              }}
+            />
+          )}
+          {view === 'flash' && <Flashcards />}
+        </div>
       </main>
     </div>
   )
