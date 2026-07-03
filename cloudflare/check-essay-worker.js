@@ -82,12 +82,19 @@ ${answer}
     const data = await resp.json()
     const content = data.choices?.[0]?.message?.content ?? ''
     try {
-      const parsed = JSON.parse(content)
+      // модель может обернуть JSON в ```json ... ``` или добавить текст вокруг
+      let txt = content.trim()
+      const fence = txt.match(/```(?:json)?\s*([\s\S]*?)```/)
+      if (fence) txt = fence[1].trim()
+      const start = txt.indexOf('{')
+      const end = txt.lastIndexOf('}')
+      if (start >= 0 && end > start) txt = txt.slice(start, end + 1)
+      const parsed = JSON.parse(txt)
       parsed.maxScore = maxScore
       parsed.score = Math.max(0, Math.min(maxScore, Number(parsed.score) || 0))
       return json(parsed)
     } catch {
-      return json({ error: 'ИИ вернул невалидный JSON, попробуй ещё раз' }, 502)
+      return json({ error: 'ИИ вернул невалидный JSON: ' + content.slice(0, 150) }, 502)
     }
   },
 }

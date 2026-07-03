@@ -33,6 +33,8 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # URL публичный, секрет не нужен — ключ OpenRouter живёт в секрете самого воркера
+          VITE_AI_ENDPOINT: https://ege-check-essay.realfactchecknews.workers.dev/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
