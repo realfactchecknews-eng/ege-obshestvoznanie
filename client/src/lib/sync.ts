@@ -42,31 +42,31 @@ function mergeBlobs(local: Blob, remote: Blob): Blob {
   const merged: Blob = { ...remote, ...local }
 
   // ege_answers / ege_variants — массивы: объединяем и убираем дубли
-  merged['ege_answers'] = dedupe(
-    [...(asArray(remote['ege_answers'])), ...(asArray(local['ege_answers']))],
+  merged['ege2_answers'] = dedupe(
+    [...(asArray(remote['ege2_answers'])), ...(asArray(local['ege2_answers']))],
     (a) => `${a.taskId}:${a.ts}`
   )
-  merged['ege_variants'] = dedupe(
-    [...(asArray(remote['ege_variants'])), ...(asArray(local['ege_variants']))],
+  merged['ege2_variants'] = dedupe(
+    [...(asArray(remote['ege2_variants'])), ...(asArray(local['ege2_variants']))],
     (v) => String(v.id)
   )
 
   // ege_learned — объект bool: true побеждает
-  merged['ege_learned'] = { ...asObj(remote['ege_learned']), ...asObj(local['ege_learned']) }
+  merged['ege2_learned'] = { ...asObj(remote['ege2_learned']), ...asObj(local['ege2_learned']) }
 
   // ege_flash — объект { term: { box, due } }: берём запись с большей коробкой
-  const rf = asObj(remote['ege_flash']) as Record<string, { box: number; due: number }>
-  const lf = asObj(local['ege_flash']) as Record<string, { box: number; due: number }>
+  const rf = asObj(remote['ege2_flash']) as Record<string, { box: number; due: number }>
+  const lf = asObj(local['ege2_flash']) as Record<string, { box: number; due: number }>
   const flash: Record<string, { box: number; due: number }> = { ...rf }
   for (const [term, v] of Object.entries(lf)) {
     if (!flash[term] || v.box >= flash[term].box) flash[term] = v
   }
-  merged['ege_flash'] = flash
+  merged['ege2_flash'] = flash
 
   // ege_streak — берём с большим count / более поздней датой
-  const rs = asObj(remote['ege_streak']) as { count?: number; last?: string }
-  const ls = asObj(local['ege_streak']) as { count?: number; last?: string }
-  merged['ege_streak'] = {
+  const rs = asObj(remote['ege2_streak']) as { count?: number; last?: string }
+  const ls = asObj(local['ege2_streak']) as { count?: number; last?: string }
+  merged['ege2_streak'] = {
     count: Math.max(rs.count ?? 0, ls.count ?? 0),
     last: (rs.last ?? '') > (ls.last ?? '') ? rs.last : ls.last,
   }

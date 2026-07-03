@@ -1,11 +1,12 @@
 import type { AnswerResult, VariantResult } from '../types'
 
+// Префикс v2: смена префикса = общий сброс прогресса у всех (старые ключи игнорируются)
 const K = {
-  answers: 'ege_answers',
-  learned: 'ege_learned',
-  variants: 'ege_variants',
-  flash: 'ege_flash',
-  streak: 'ege_streak',
+  answers: 'ege2_answers',
+  learned: 'ege2_learned',
+  variants: 'ege2_variants',
+  flash: 'ege2_flash',
+  streak: 'ege2_streak',
 }
 
 function read<T>(key: string, fallback: T): T {
@@ -25,17 +26,17 @@ function write<T>(key: string, val: T) {
 }
 
 // Ключи, относящиеся к прогрессу ученика (для облачной синхронизации)
-export const PROGRESS_KEYS = [K.answers, K.learned, K.variants, K.flash, K.streak, 'ege_book']
+export const PROGRESS_KEYS = [K.answers, K.learned, K.variants, K.flash, K.streak, 'ege2_book']
 
 // ---- Прогресс по вариантам сборника (лучший результат части 1) ----
 export function getBookScores(): Record<number, number> {
-  return read<Record<number, number>>('ege_book', {})
+  return read<Record<number, number>>('ege2_book', {})
 }
 export function setBookScore(variant: number, score: number) {
   const all = getBookScores()
   if (score > (all[variant] ?? -1)) {
     all[variant] = score
-    write('ege_book', all)
+    write('ege2_book', all)
   }
 }
 

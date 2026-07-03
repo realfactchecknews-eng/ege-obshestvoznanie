@@ -11,6 +11,7 @@ import { useTheme } from './lib/theme'
 import { StreakFlame } from './components/StreakFlame'
 import { AuthWidget } from './components/AuthWidget'
 import { SplashScreen } from './components/SplashScreen'
+import { ElephantLogo } from './components/ElephantLogo'
 
 type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'book' | 'weak' | 'flash'
 
@@ -95,11 +96,7 @@ export default function App() {
               <path d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          <div className="w-8 h-8 rounded-lg bg-gradient-accent flex items-center justify-center">
-            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-white">
-              <path d="M12 3 L21 8 L12 13 L3 8 Z" fill="currentColor" />
-            </svg>
-          </div>
+          <ElephantLogo size={32} />
           <span className="font-bold text-sm">ЕГЭ Обществознание</span>
         </div>
         <ThemeToggle theme={theme} onToggle={toggle} />
@@ -123,13 +120,7 @@ export default function App() {
         {/* Логотип */}
         <div className="p-5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-accent flex items-center justify-center shadow-accent">
-              <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-white">
-                <path d="M12 3 L21 8 L12 13 L3 8 Z" fill="currentColor" opacity="0.95" />
-                <path d="M3 12 L12 17 L21 12" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" opacity="0.7" />
-                <path d="M3 16 L12 21 L21 16" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" opacity="0.45" />
-              </svg>
-            </div>
+            <ElephantLogo size={38} />
             <div>
               <p className="font-bold text-base leading-tight">ЕГЭ</p>
               <p className="text-xs text-accent2 font-medium -mt-0.5">Обществознание</p>
@@ -191,16 +182,12 @@ export default function App() {
           })}
         </nav>
 
-        {/* Низ сайдбара — аккаунт + огонёк серии + подпись */}
+        {/* Низ сайдбара — аккаунт + огонёк серии */}
         <div className="p-4 border-t border-border-soft space-y-3">
           <AuthWidget />
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted">Серия</span>
             <StreakFlame variant="compact" />
-          </div>
-          <div>
-            <p className="text-xs text-muted">Цель: 85+ баллов</p>
-            <p className="text-xs text-muted/70 mt-0.5">v2.1 · аккаунт + ИИ</p>
           </div>
         </div>
       </aside>

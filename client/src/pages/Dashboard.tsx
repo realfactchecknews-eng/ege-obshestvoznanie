@@ -157,7 +157,7 @@ export default function Dashboard({ go }: { go: (v: string) => void }) {
             desc="Очистить всю статистику ответов"
             onClick={() => {
               if (confirm('Удалить всю статистику ответов? Это действие нельзя отменить.')) {
-                localStorage.removeItem('ege_answers')
+                localStorage.removeItem('ege2_answers')
                 location.reload()
               }
             }}
