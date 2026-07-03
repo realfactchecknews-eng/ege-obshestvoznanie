@@ -240,6 +240,20 @@ function BookTaskCard({
 }
 
 /* ===================== Карточка задания части 2 ===================== */
+
+/**
+ * Критерии в книге идут одним блоком на весь вариант — по одной секции
+ * "Содержание верного ответа..." на каждое задание 17–25. Если секций ровно 9,
+ * показываем только секцию своего задания; иначе (OCR слил секции) — весь блок.
+ */
+function criteriaForTask(criteriaRaw: string, num: number): { text: string; isExact: boolean } {
+  const parts = criteriaRaw.split(/(?=Содержание верного ответа)/g).filter((p) => p.trim())
+  if (parts.length === 9 && num >= 17 && num <= 25) {
+    return { text: parts[num - 17].trim(), isExact: true }
+  }
+  return { text: criteriaRaw, isExact: false }
+}
+
 function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw: string }) {
   const [answer, setAnswer] = useState('')
   const [showCriteria, setShowCriteria] = useState(false)
@@ -261,7 +275,8 @@ function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw
         question: task.text ?? '',
         options: [],
         correct_answer: '',
-        criteria: [],
+        // Передаём ИИ официальные критерии из книги (секция своего задания)
+        criteria: [criteriaForTask(criteriaRaw, task.num).text],
         explanation: '',
         source: 'Котова, Лискова — типовые варианты 2026',
       }
@@ -362,14 +377,19 @@ function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw
         </div>
       )}
 
-      {showCriteria && (
-        <div className="card p-4 bg-panel2 mt-3 max-h-[420px] overflow-y-auto">
-          <p className="text-xs uppercase tracking-wide text-accent2 font-semibold mb-2">
-            Официальные критерии оценивания (весь вариант, из книги)
-          </p>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-text-soft">{criteriaRaw}</p>
-        </div>
-      )}
+      {showCriteria && (() => {
+        const crit = criteriaForTask(criteriaRaw, task.num)
+        return (
+          <div className="card p-4 bg-panel2 mt-3 max-h-[420px] overflow-y-auto animate-slide-down">
+            <p className="text-xs uppercase tracking-wide text-accent2 font-semibold mb-2">
+              {crit.isExact
+                ? `Официальные критерии оценивания — задание ${task.num}`
+                : 'Официальные критерии оценивания (весь вариант, из книги)'}
+            </p>
+            <p className="whitespace-pre-line text-sm leading-relaxed text-text-soft">{crit.text}</p>
+          </div>
+        )
+      })()}
     </div>
   )
 }

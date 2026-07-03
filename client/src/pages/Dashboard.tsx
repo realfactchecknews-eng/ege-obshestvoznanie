@@ -37,15 +37,26 @@ export default function Dashboard({ go }: { go: (v: string) => void }) {
   return (
     <div className="space-y-6 animate-slide-up">
       {/* ===== HERO ===== */}
-      <section className="relative overflow-hidden rounded-2xl border border-border bg-gradient-hero">
+      <section className="relative overflow-hidden rounded-2xl border border-accent/20 bg-gradient-hero">
+        {/* Декоративные градиентные пятна */}
+        <div aria-hidden className="absolute -top-16 -right-16 w-64 h-64 rounded-full bg-accent/15 blur-3xl animate-float" />
+        <div aria-hidden className="absolute -bottom-20 left-1/4 w-72 h-72 rounded-full bg-accent/10 blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
+        <div aria-hidden className="absolute top-1/3 right-1/3 w-24 h-24 rounded-full bg-accent/10 blur-2xl animate-float" style={{ animationDelay: '0.7s' }} />
+
         <div className="relative p-6 md:p-8">
           <div className="flex items-start justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-[240px]">
-              <p className="text-sm text-accent2 font-medium">{greeting}</p>
-              <h1 className="text-2xl md:text-3xl font-bold mt-1 text-balance">
-                Готовимся к ЕГЭ по обществознанию
+              <p className="text-sm text-accent2 font-medium flex items-center gap-1.5">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse-soft" />
+                {greeting}
+              </p>
+              <h1 className="text-2xl md:text-4xl font-bold mt-1.5 text-balance tracking-tight">
+                Готовимся к ЕГЭ по{' '}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent2 to-accent">
+                  обществознанию
+                </span>
               </h1>
-              <p className="text-text-soft mt-2 text-sm md:text-base max-w-xl">
+              <p className="text-text-soft mt-2.5 text-sm md:text-base max-w-xl">
                 {goalDone
                   ? 'Дневная цель выполнена! Можно повторить сложные темы или пройти ещё вариант.'
                   : `Сегодня решено ${today} из ${DAILY_GOAL} заданий. Осталось ${Math.max(0, DAILY_GOAL - today)} — и цель дня закрыта.`}

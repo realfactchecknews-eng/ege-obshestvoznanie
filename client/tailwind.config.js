@@ -35,11 +35,14 @@ export default {
         'smooth': 'cubic-bezier(0.22, 1, 0.36, 1)',
       },
       animation: {
-        'fade-in': 'fadeIn 0.35s var(--ease-smooth) both',
-        'slide-up': 'slideUp 0.45s var(--ease-smooth) both',
-        'slide-down': 'slideDown 0.3s var(--ease-smooth) both',
-        'scale-in': 'scaleIn 0.35s var(--ease-spring) both',
-        'pop-in': 'popIn 0.5s var(--ease-spring) both',
+        // fill-mode 'backwards' (не 'both'!): после завершения анимации элемент
+        // возвращается к натуральным стилям без transform — иначе сохранённый
+        // transform ломает position:fixed у вложенных модалок/попапов.
+        'fade-in': 'fadeIn 0.35s var(--ease-smooth) backwards',
+        'slide-up': 'slideUp 0.45s var(--ease-smooth) backwards',
+        'slide-down': 'slideDown 0.3s var(--ease-smooth) backwards',
+        'scale-in': 'scaleIn 0.35s var(--ease-spring) backwards',
+        'pop-in': 'popIn 0.5s var(--ease-spring) backwards',
         'pulse-soft': 'pulseSoft 2.2s ease-in-out infinite',
         'shimmer': 'shimmer 1.6s ease-in-out infinite',
         'wiggle': 'wiggle 0.4s ease-in-out',
@@ -48,25 +51,29 @@ export default {
         'float': 'float 3.5s ease-in-out infinite',
       },
       keyframes: {
+        // ВАЖНО: конечное состояние transform всегда 'none', а не 'translateY(0)'/'scale(1)'.
+        // Анимации используют fill-mode both, и сохранившийся transform (даже нулевой)
+        // делает элемент containing block для position:fixed потомков — модалки/попапы
+        // начинают позиционироваться относительно страницы вместо экрана.
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(14px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+          '100%': { opacity: '1', transform: 'none' },
         },
         slideDown: {
           '0%': { opacity: '0', transform: 'translateY(-8px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+          '100%': { opacity: '1', transform: 'none' },
         },
         scaleIn: {
           '0%': { opacity: '0', transform: 'scale(0.92)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
+          '100%': { opacity: '1', transform: 'none' },
         },
         popIn: {
           '0%': { opacity: '0', transform: 'scale(0.7) translateY(6px)' },
-          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
+          '100%': { opacity: '1', transform: 'none' },
         },
         pulseSoft: {
           '0%, 100%': { opacity: '1', transform: 'scale(1)' },
@@ -84,7 +91,7 @@ export default {
         checkPop: {
           '0%': { opacity: '0', transform: 'scale(0.3) rotate(-15deg)' },
           '60%': { opacity: '1', transform: 'scale(1.15) rotate(3deg)' },
-          '100%': { opacity: '1', transform: 'scale(1) rotate(0)' },
+          '100%': { opacity: '1', transform: 'none' },
         },
         ringIn: {
           '0%': { strokeDashoffset: 'var(--ring-circumference)' },

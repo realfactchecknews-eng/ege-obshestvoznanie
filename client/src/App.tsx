@@ -26,6 +26,7 @@ const NAV: { id: View; label: string; icon: () => ReactElement }[] = [
 export default function App() {
   const [view, setView] = useState<View>('dashboard')
   const [weakTopics, setWeakTopics] = useState<string[] | undefined>(undefined)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const { theme, toggle } = useTheme()
   const navRef = useRef<HTMLElement>(null)
   const btnRefs = useRef<Map<View, HTMLButtonElement>>(new Map())
@@ -34,7 +35,14 @@ export default function App() {
   function go(v: string) {
     setWeakTopics(undefined)
     setView(v as View)
+    setDrawerOpen(false)
   }
+
+  // Блокируем прокрутку фона, пока открыт мобильный drawer
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [drawerOpen])
 
   // viewRef всегда содержит АКТУАЛЬНОЕ значение view — обработчик resize/observer
   // ниже создаётся один раз при монтировании и не должен захватывать view в замыкании,
@@ -71,10 +79,46 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
-      {/* Сайдбар (десктоп) / верхняя навигация (мобайл) */}
-      <aside className="md:w-64 md:min-h-screen bg-panel border-b md:border-b-0 md:border-r border-border md:sticky md:top-0 md:h-screen flex md:flex-col">
+      {/* Мобильная шапка с гамбургером (fixed сверху) */}
+      <header className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between p-3 bg-panel/90 backdrop-blur-md border-b border-border">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Открыть меню"
+            className="w-9 h-9 rounded-lg border border-border bg-panel2 flex items-center justify-center
+                       text-text-soft hover:text-accent2 hover:border-accent/40 transition-all active:scale-95"
+          >
+            <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+          <div className="w-8 h-8 rounded-lg bg-gradient-accent flex items-center justify-center">
+            <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-white">
+              <path d="M12 3 L21 8 L12 13 L3 8 Z" fill="currentColor" />
+            </svg>
+          </div>
+          <span className="font-bold text-sm">ЕГЭ Обществознание</span>
+        </div>
+        <ThemeToggle theme={theme} onToggle={toggle} />
+      </header>
+
+      {/* Затемнение под мобильным drawer */}
+      <div
+        onClick={() => setDrawerOpen(false)}
+        className={`md:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-300
+          ${drawerOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+      />
+
+      {/* Сайдбар: на десктопе — статичный, на мобильном — выезжающий drawer */}
+      <aside
+        className={`bg-panel border-border flex flex-col
+          fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] border-r shadow-soft-lg
+          transition-transform duration-300 ease-smooth
+          ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}
+          md:translate-x-0 md:static md:w-64 md:min-h-screen md:sticky md:top-0 md:h-screen md:shadow-none`}
+      >
         {/* Логотип */}
-        <div className="p-5 hidden md:flex items-center justify-between gap-2">
+        <div className="p-5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-accent flex items-center justify-center shadow-accent">
               <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-white">
@@ -88,24 +132,24 @@ export default function App() {
               <p className="text-xs text-accent2 font-medium -mt-0.5">Обществознание</p>
             </div>
           </div>
-          <ThemeToggle theme={theme} onToggle={toggle} />
-        </div>
-
-        {/* Мобильная шапка */}
-        <div className="md:hidden flex items-center justify-between p-3 border-b border-border">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-accent flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="none" className="w-4 h-4 text-white">
-                <path d="M12 3 L21 8 L12 13 L3 8 Z" fill="currentColor" />
+            <span className="hidden md:block"><ThemeToggle theme={theme} onToggle={toggle} /></span>
+            {/* Кнопка закрытия drawer (только мобайл) */}
+            <button
+              onClick={() => setDrawerOpen(false)}
+              aria-label="Закрыть меню"
+              className="md:hidden w-9 h-9 rounded-lg border border-border bg-panel2 flex items-center justify-center
+                         text-text-soft hover:text-bad hover:border-bad/40 transition-all active:scale-95"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M18 6L6 18M6 6l12 12" />
               </svg>
-            </div>
-            <span className="font-bold text-sm">ЕГЭ Обществознание</span>
+            </button>
           </div>
-          <ThemeToggle theme={theme} onToggle={toggle} />
         </div>
 
         {/* Навигация */}
-        <nav ref={navRef} className="relative flex md:flex-col gap-1 p-2 overflow-x-auto md:flex-1">
+        <nav ref={navRef} className="relative flex flex-col gap-1 p-2 flex-1 overflow-y-auto">
           {/* Плавно скользящая плашка активного пункта */}
           {indicator && (
             <div
@@ -145,7 +189,7 @@ export default function App() {
         </nav>
 
         {/* Низ сайдбара — аккаунт + огонёк серии + подпись */}
-        <div className="hidden md:block p-4 border-t border-border-soft space-y-3">
+        <div className="p-4 border-t border-border-soft space-y-3">
           <AuthWidget />
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted">Серия</span>
@@ -158,8 +202,8 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Контент */}
-      <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full">
+      {/* Контент (отступ сверху на мобильном — под fixed-шапку) */}
+      <main className="flex-1 p-4 pt-[72px] md:p-8 md:pt-8 max-w-6xl mx-auto w-full">
         <div key={view} className="animate-slide-up">
           {view === 'dashboard' && <Dashboard go={go} />}
           {view === 'theory' && <Theory />}

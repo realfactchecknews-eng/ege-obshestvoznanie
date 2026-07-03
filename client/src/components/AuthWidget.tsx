@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../lib/auth'
 
 /**
@@ -77,7 +78,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
     }
   }
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 overlay backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in" onClick={onClose}>
       <div className="card p-6 max-w-sm w-full shadow-soft-lg" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-3 mb-5">
@@ -137,6 +138,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
