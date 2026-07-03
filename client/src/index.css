@@ -277,3 +277,45 @@ body {
     transform: translateY(-3px);
   }
 }
+
+/* ============================================================
+   ЗАСТАВКА: розовый слон
+   ============================================================ */
+.trunk-swing {
+  transform-origin: 38px 96px;
+  animation: trunkSwing 0.7s ease-in-out infinite alternate;
+}
+@keyframes trunkSwing {
+  from { transform: rotate(-16deg); }
+  to   { transform: rotate(18deg); }
+}
+
+.elephant-pop {
+  animation: elephantPop 0.55s var(--ease-smooth) both;
+}
+@keyframes elephantPop {
+  0%   { transform: scale(1);    opacity: 1; }
+  55%  { transform: scale(1.28); opacity: 1; }
+  100% { transform: scale(1.7);  opacity: 0; }
+}
+
+.splash-particle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 9999px;
+  pointer-events: none;
+  animation: particleFly 0.7s var(--ease-smooth) both;
+}
+@keyframes particleFly {
+  0%   { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0.3); opacity: 0; }
+}
+
+.splash-fade-out {
+  animation: splashFadeOut 0.4s ease both;
+}
+@keyframes splashFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; visibility: hidden; }
+}

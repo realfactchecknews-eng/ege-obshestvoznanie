@@ -101,7 +101,7 @@ function AuthModal({ onClose }: { onClose: () => void }) {
             <label className="text-xs text-muted font-medium">Email</label>
             <input
               type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder="rikovakatya@sobaka.com"
               className="w-full mt-1 px-3 py-2 rounded-lg bg-panel2 border border-border outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
             />
           </div>

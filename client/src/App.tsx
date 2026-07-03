@@ -10,6 +10,7 @@ import Flashcards from './pages/Flashcards'
 import { useTheme } from './lib/theme'
 import { StreakFlame } from './components/StreakFlame'
 import { AuthWidget } from './components/AuthWidget'
+import { SplashScreen } from './components/SplashScreen'
 
 type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'book' | 'weak' | 'flash'
 
@@ -27,6 +28,7 @@ export default function App() {
   const [view, setView] = useState<View>('dashboard')
   const [weakTopics, setWeakTopics] = useState<string[] | undefined>(undefined)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const [splash, setSplash] = useState(true)
   const { theme, toggle } = useTheme()
   const navRef = useRef<HTMLElement>(null)
   const btnRefs = useRef<Map<View, HTMLButtonElement>>(new Map())
@@ -79,6 +81,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
+      {splash && <SplashScreen onDone={() => setSplash(false)} />}
       {/* Мобильная шапка с гамбургером (fixed сверху) */}
       <header className="md:hidden fixed top-0 inset-x-0 z-40 flex items-center justify-between p-3 bg-panel/90 backdrop-blur-md border-b border-border">
         <div className="flex items-center gap-2">
