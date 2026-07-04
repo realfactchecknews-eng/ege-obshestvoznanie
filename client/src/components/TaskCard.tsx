@@ -98,6 +98,13 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
         <p className="whitespace-pre-line leading-relaxed text-[15px] md:text-base">
           {task.question}
         </p>
+        {task.image && (
+          <img
+            src={`${import.meta.env.BASE_URL}${task.image}`}
+            alt="График/диаграмма к заданию"
+            className="mt-3 rounded-lg border border-border max-w-full md:max-w-md bg-white"
+          />
+        )}
       </div>
 
       {/* SINGLE */}

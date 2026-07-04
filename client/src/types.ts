@@ -16,6 +16,8 @@ export interface Task {
   criteria?: string[]
   explanation: string
   source: string
+  /** Путь к картинке (график/диаграмма) относительно public/, напр. "graphs/v1_graph21.png" */
+  image?: string
 }
 
 export interface TheoryTopic {
