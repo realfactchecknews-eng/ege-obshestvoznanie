@@ -73,7 +73,7 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
 
   const isWritten = task.type === 'written'
   const isPart2 = task.task_number > 20
-  const disabled = submitted || controlled
+  const disabled = submitted
 
   return (
     <div className={`card p-5 md:p-6 transition-shadow ${submitted && !controlled ? 'shadow-soft-md' : ''}`}>
