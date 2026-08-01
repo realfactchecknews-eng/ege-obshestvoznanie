@@ -430,12 +430,22 @@ function parseMatchingTask(raw: string): MatchingTable | null {
   const lastLetterStart = letterHits[letterHits.length - 1].index ?? -1
   if (firstNumberStart < lastLetterStart) return null
 
+  // Между последним буквенным пунктом и первым числовым обычно стоит заголовок
+  // второго столбца ("СИСТЕМЫ НАЛОГООБЛОЖЕНИЯ" и т.п.) — его нельзя относить
+  // к тексту последнего пункта, иначе он "приклеивается" к нему при рендере.
+  const lastLetterEnd = (letterHits[letterHits.length - 1].index ?? 0) + letterHits[letterHits.length - 1][0].length
+  const betweenLastLetterAndFirstNumber = raw.slice(lastLetterEnd, numberHits[0].index)
+  const rightHeaderMatch = betweenLastLetterAndFirstNumber.match(/\n\s*([А-ЯЁ][А-ЯЁ\s(),/]{4,})\s*$/)
+  const lastLetterEndAdjusted = rightHeaderMatch
+    ? lastLetterEnd + (rightHeaderMatch.index ?? betweenLastLetterAndFirstNumber.length)
+    : numberHits[0].index
+
   const intro = raw.slice(0, letterHits[0].index).trim()
 
   const left: { label: string; text: string }[] = []
   for (let i = 0; i < letterHits.length; i++) {
     const start = (letterHits[i].index ?? 0) + letterHits[i][0].length
-    const end = i + 1 < letterHits.length ? letterHits[i + 1].index : numberHits[0].index
+    const end = i + 1 < letterHits.length ? letterHits[i + 1].index : lastLetterEndAdjusted
     left.push({ label: letterHits[i][1], text: raw.slice(start, end).replace(/\n/g, ' ').trim() })
   }
 
