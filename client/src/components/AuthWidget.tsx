@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth'
 
 /**
  * Виджет авторизации в сайдбаре: кнопка «Войти» или email пользователя.
- * Если Supabase не настроен — показывает «офлайн-режим».
+ * Если Firebase не настроен — показывает «офлайн-режим».
  */
 export function AuthWidget() {
   const { user, configured, syncing, signOut } = useAuth()

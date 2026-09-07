@@ -11,7 +11,10 @@
 
 ## 0. Что нового (changelog)
 
-- **v2.6 (текущая)** — колоды части 2, картинки в заданиях, слоник, чистый прогресс:
+- **v2.7 (текущая)** — переезд на Firebase:
+  - **Аккаунты и облачная синхронизация переехали с Supabase на Firebase** (Auth + Firestore). Причина: бесплатный тариф Supabase автоматически ставит проект на паузу после ~недели без обращений — это дважды роняло вход и синхронизацию на проде. Firebase Spark простой не карает. Интерфейс `useAuth()`/`AuthWidget` не изменился, поменялась только реализация (`lib/firebase.ts`, `lib/auth.tsx`, `lib/sync.ts`). Настройка — §11.2, правила доступа — `firestore.rules`.
+
+- **v2.6** — колоды части 2, картинки в заданиях, слоник, чистый прогресс:
   - **Колоды части 2 (№17–25) наполнены из сборника**: было по 2–3 задания на номер, стало 31–33. Извлечены все 270 письменных заданий из 30 вариантов книги; для номеров 18–20 текст источника подставляется в условие; задание №21 показывает график спроса/предложения из сборника (новое поле `Task.image`, рендерится в `TaskCard`). У части заданий эталонный ответ — из официальных критериев книги (когда OCR критериев не побит), у остальных — только ИИ-проверка по стандартным требованиям ФИПИ.
   - **Вкладка «Задания» переделана в колоды по номеру ЕГЭ** (№1–№25) вместо общей ленты: экран выбора колоды показывает прогресс «решено X из Y» с полосой и галочкой на закрытой колоде; фильтр по разделу — опциональный, влияет и на набор колод, и на список внутри. Режим «тренировать слабые темы» (переход со страницы «Слабые места») остался отдельным плоским списком.
   - **Заставка при загрузке**: розовый слон мотает хоботом ~2 сек, потом лопается (частицы разлетаются), открывается сайт. Клик — пропустить. Компонент `SplashScreen.tsx`.
@@ -19,7 +22,7 @@
   - **Общий сброс прогресса**: ключи localStorage переехали с `ege_*` на `ege2_*` — у всех пользователей прогресс обнулился один раз.
   - **Убраны декоративные подписи** «Цель: 85+ баллов» и «vX.X · аккаунт + ИИ» из низа сайдбара.
   - **Термины: 354 → 515**, новые определения строго в формате задания 18 ФИПИ (родовое понятие + существенные признаки, без примеров/метафор — чтобы реально зачли на экзамене).
-  - **Своя ИИ-проверка через Cloudflare Worker** (см. §11.1) — не требует Supabase Edge Function, ключ OpenRouter лежит в секретах воркера.
+  - **Своя ИИ-проверка через Cloudflare Worker** (см. §11.1) — ключ OpenRouter лежит в секретах воркера, на клиент не попадает.
   - **Мобильный drawer-сайдбар**: на мобильном сайдбар выезжает по гамбургеру, а не просто виден сверху.
   - Плавные анимации по всему сайту: скользящий индикатор активной вкладки в навигации, каскадное появление карточек, дорисовка колец/полос прогресса, тактильная отдача кнопок — см. `index.css` и `tailwind.config.js` (секция `animation`/`keyframes`).
 
@@ -37,8 +40,8 @@
 - **v2.1** — аккаунты, облако, ИИ:
   - База терминов разбита на колоды по 6 блокам + общая колода «Все термины».
   - Огонёк серии (streak) на главной + компактный индикатор в сайдбаре.
-  - Авторизация (Supabase, email + пароль) и облачная синхронизация прогресса между устройствами. Без настройки — офлайн-режим на `localStorage`.
-  - ИИ-проверка письменных заданий через Supabase Edge Function (сейчас опциональна — см. v2.6, есть более простой путь через Cloudflare Worker).
+  - Авторизация (изначально Supabase, с v2.7 — Firebase, см. ниже) и облачная синхронизация прогресса между устройствами. Без настройки — офлайн-режим на `localStorage`.
+  - ИИ-проверка письменных заданий (изначально Supabase Edge Function, с v2.6 — Cloudflare Worker, см. v2.6).
 
 - **v2.0** — мятный редизайн: палитра на CSS-переменных, hero с кольцом прогресса, обновлённые страницы.
 
@@ -46,7 +49,7 @@
 
 ## 1. Что это и как устроено в двух словах
 
-Это **статический клиентский SPA** (React + TypeScript + Vite + Tailwind). Вся «база» заданий, теории, терминов и сборника вариантов — это JSON-файлы, которые **бандлятся в сборку** на этапе компиляции. Прогресс ученика (ответы, серии, изученные темы, состояние карточек, результаты вариантов) хранится в **`localStorage`**; при настроенном Supabase — дополнительно синхронизируется в облако.
+Это **статический клиентский SPA** (React + TypeScript + Vite + Tailwind). Вся «база» заданий, теории, терминов и сборника вариантов — это JSON-файлы, которые **бандлятся в сборку** на этапе компиляции. Прогресс ученика (ответы, серии, изученные темы, состояние карточек, результаты вариантов) хранится в **`localStorage`**; при настроенном Firebase — дополнительно синхронизируется в облако.
 
 Папка `/server` — **опциональный** Express + SQLite REST API, не используется развёрнутой на GitHub Pages версией (Pages раздаёт только статику). Источник правды для данных — JSON в `client/src/data/`, `server/data/` — их копии.
 
@@ -55,7 +58,7 @@
                  ├─ React-приложение (SplashScreen → Dashboard/Practice/...)
                  ├─ tasks.json / theory.json / terms.json / book_variants.json (вшиты в бандл)
                  ├─ localStorage (прогресс, ключи ege2_*)
-                 ├─ Supabase (опционально: авторизация + облачная синхронизация прогресса)
+                 ├─ Firebase (опционально: авторизация + облачная синхронизация прогресса в Firestore)
                  └─ Cloudflare Worker (опционально: ИИ-проверка письменных через OpenRouter)
 
 [опционально, локально] server/ → Express → SQLite (server/db/ege.db)
@@ -69,9 +72,9 @@
 |------|-----------|
 | Клиент | React 19, TypeScript, Vite 8, Tailwind CSS |
 | Состояние/навигация | Локальный React-стейт (без react-router). Переключение экранов — `useState<View>` в `App.tsx`, сайдбар со скользящим индикатором активного пункта |
-| Хранение прогресса | `localStorage` (обёртки в `client/src/lib/storage.ts`), опционально Supabase Postgres |
-| Авторизация | Supabase Auth (email + пароль), опционально |
-| ИИ-проверка письменных | Cloudflare Worker → OpenRouter (основной путь, см. §11.1) либо Supabase Edge Function → OpenAI (альтернатива, см. §11.2) |
+| Хранение прогресса | `localStorage` (обёртки в `client/src/lib/storage.ts`), опционально Firebase Firestore |
+| Авторизация | Firebase Auth (email + пароль), опционально |
+| ИИ-проверка письменных | Cloudflare Worker → OpenRouter (см. §11.1) |
 | Сервер (опционально) | Node.js (ESM), Express 4, better-sqlite3 |
 | Деплой | GitHub Actions → GitHub Pages (`.github/workflows/deploy.yml`) |
 
@@ -87,15 +90,13 @@ ege-obshestvoznanie/
 ├── .github/workflows/deploy.yml   # CI: сборка client/ и публикация на Pages при пуше в main
 ├── cloudflare/
 │   └── check-essay-worker.js      # код Cloudflare Worker для ИИ-проверки (деплоится вручную через dash.cloudflare.com)
-├── supabase/
-│   ├── schema.sql                 # таблица user_progress + RLS-политики
-│   └── functions/check-essay/     # альтернативный путь ИИ-проверки через Supabase Edge Function
+├── firestore.rules                # правила доступа Firestore (пользователь читает/пишет только свой прогресс)
 │
 ├── client/                        # ← ЭТО ДЕПЛОИТСЯ
 │   ├── index.html                 # точка входа, lang="ru", favicon-слоник
 │   ├── vite.config.ts             # base: '/ege-obshestvoznanie/'
 │   ├── tailwind.config.js         # darkMode:'class', палитра, анимации (fade/slide/scale/pop/check-pop/shimmer…)
-│   ├── .env.example                # шаблон для .env.local (Supabase + опц. VITE_AI_ENDPOINT)
+│   ├── .env.example                # шаблон для .env.local (Firebase + VITE_AI_ENDPOINT)
 │   ├── src/
 │   │   ├── main.tsx               # bootstrap React
 │   │   ├── App.tsx                # навигация (drawer на мобильном), сайдбар, SplashScreen, ThemeToggle
@@ -111,10 +112,10 @@ ege-obshestvoznanie/
 │   │   │   ├── book.ts            # типы и импорт book_variants.json, checkBookAnswer() для вкладки «Сборник 30»
 │   │   │   ├── storage.ts         # вся работа с localStorage: ответы, streak, learned, SRS-карточки, варианты (ключи ege2_*)
 │   │   │   ├── theme.ts           # светлая/тёмная тема, применяется до рендера (без вспышки)
-│   │   │   ├── supabase.ts        # клиент Supabase из env; isSupabaseConfigured гейтит облачную логику
+│   │   │   ├── firebase.ts        # инициализация Firebase App/Auth/Firestore из env; isFirebaseConfigured гейтит облачную логику
 │   │   │   ├── auth.tsx           # AuthProvider/useAuth: сессия, вход/регистрация
 │   │   │   ├── sync.ts            # слияние локального и облачного прогресса
-│   │   │   └── ai.ts              # ИИ-проверка: сначала VITE_AI_ENDPOINT (Cloudflare Worker), иначе Supabase Edge Function
+│   │   │   └── ai.ts              # ИИ-проверка через VITE_AI_ENDPOINT (Cloudflare Worker)
 │   │   ├── components/
 │   │   │   ├── TaskCard.tsx       # ★ универсальная карточка задания (5 типов + картинка + режим варианта)
 │   │   │   ├── SplashScreen.tsx   # заставка при загрузке (слон мотает хоботом → лопается)
@@ -317,7 +318,7 @@ npm start        # API на http://localhost:3001
 | GET | `/api/theory` | теория из `server/data/theory.json` |
 | GET | `/api/terms` | термины из `server/data/terms.json` |
 
-> Клиент **не** ходит в это API (работает на localStorage/Supabase). Это осознанная нереализованная развилка — см. раздел 10.
+> Клиент **не** ходит в это API (работает на localStorage/Firebase). Это осознанная нереализованная развилка — см. раздел 10.
 
 ---
 
@@ -361,16 +362,16 @@ GitHub Pages включён в режиме **GitHub Actions** (Settings → Pag
 - **ИИ-проверка ориентировочна** — даёт оценку по критериям, но не заменяет реального эксперта ФИПИ.
 - **Нет тестов** (ни юнит, ни e2e).
 - Данные заданий вшиваются в бандл (текущий JS-чанк ~3.5 МБ до gzip) — при дальнейшем росте контента стоит вынести данные в подгружаемые по сети файлы или включить код-сплиттинг (`vite build` уже предупреждает об этом).
-- Подтверждение email при регистрации зависит от настроек Supabase (Authentication → Sign In / Providers → Email → выключить «Confirm email» для мгновенного входа без письма).
+- Подтверждение email при регистрации зависит от настроек Firebase Auth (Authentication → Settings → включить/выключить проверку email при желании).
 - У части заданий части 2 (взятых из вариантов сборника, где OCR критериев побит) нет эталонного ответа из книги — доступна только ИИ-проверка по стандартным требованиям ФИПИ, без сверки с оригинальными критериями.
 
 ---
 
 ## 11. Настройка бэкенда: ИИ-проверка + аккаунты и облако
 
-Сайт полностью работает и **без** этого раздела (офлайн-режим, прогресс в `localStorage`, кнопка «Проверить с ИИ» неактивна). Ниже — два независимых блока: ИИ-проверка (проще всего через Cloudflare) и аккаунты/облако (через Supabase).
+Сайт полностью работает и **без** этого раздела (офлайн-режим, прогресс в `localStorage`, кнопка «Проверить с ИИ» неактивна). Ниже — два независимых блока: ИИ-проверка (через Cloudflare) и аккаунты/облако (через Firebase).
 
-### 11.1. ИИ-проверка через Cloudflare Worker (основной способ)
+### 11.1. ИИ-проверка через Cloudflare Worker
 
 Ключ OpenRouter лежит в секретах воркера и никогда не попадает в клиентский бандл.
 
@@ -387,67 +388,38 @@ GitHub Pages включён в режиме **GitHub Actions** (Settings → Pag
 
 Контракт воркера: `POST { taskNumber, question, answer, criteria, modelAnswer }` → JSON `{ perCriterion, score, maxScore, overall }` (или `{ error }`). Логика — `client/src/lib/ai.ts`.
 
-### 11.2. Аккаунты + облачная синхронизация (Supabase)
+### 11.2. Аккаунты + облачная синхронизация (Firebase)
 
-**Стек:** Supabase Auth (email + пароль) + Postgres для прогресса. Опционально Supabase Edge Function как альтернативный путь ИИ-проверки, если не хочется заводить Cloudflare Worker.
+**Стек:** Firebase Auth (email + пароль) + Firestore для прогресса. Выбран вместо Supabase, потому что бесплатный тариф Supabase **автоматически ставит проект на паузу после ~недели без обращений** — это уже дважды роняло вход и синхронизацию на проде. Firebase Spark (бесплатный) простой не карает.
 
-#### Шаг 1. Создать проект Supabase
-1. Зарегистрируйтесь на [supabase.com](https://supabase.com), создайте новый проект.
-2. Project Settings → API → скопируйте **Project URL** и **publishable / anon public key**.
-   ⚠️ Берите именно ключ с пометкой `anon`/`publishable` (новый формат — `sb_publishable_...`). Ключ `sb_secret_...` — секретный, с полным доступом к базе в обход защит; его **нельзя** класть в клиент/GitHub Actions секреты для фронтенда. Если случайно вставили секретный ключ и он попал в собранный бандл — немедленно отзовите его в Dashboard → Settings → API Keys → Revoke, и подставьте правильный.
+#### Шаг 1. Создать проект Firebase
+1. [console.firebase.google.com](https://console.firebase.google.com) → **Add project** → следуйте мастеру (Google Analytics не нужен).
+2. **Build → Authentication → Get started → Sign-in method → Email/Password → Enable**.
+3. **Build → Firestore Database → Create database** → любой регион, режим **production**.
+4. **Project settings** (шестерёнка) → **General** → **Your apps** → **Add app → Web** → скопируйте `apiKey`, `authDomain`, `projectId` из выданного конфига.
 
-#### Шаг 2. Создать таблицу прогресса
-Dashboard → SQL Editor → New query → вставьте содержимое [`supabase/schema.sql`](supabase/schema.sql) → Run. Создаётся таблица `user_progress` с Row Level Security.
+#### Шаг 2. Применить правила доступа Firestore
+Firestore Database → **Rules** → вставьте содержимое [`firestore.rules`](firestore.rules) → **Publish**. Каждый пользователь получает доступ только к своему документу прогресса.
 
-Чтобы регистрация работала мгновенно без письма-подтверждения: **Authentication → Sign In / Providers → Email → выключить «Confirm email» → Save**.
-
-#### Шаг 3 (опционально). Развернуть Edge Function для ИИ-проверки — альтернатива §11.1
-```bash
-npm i -g supabase
-supabase login
-supabase link --project-ref <ваш-project-ref>
-supabase functions deploy check-essay
-supabase secrets set OPENAI_API_KEY=sk-...
-```
-Код функции — [`supabase/functions/check-essay/index.ts`](supabase/functions/check-essay/index.ts). Клиент (`lib/ai.ts`) использует Cloudflare Worker (`VITE_AI_ENDPOINT`), если он задан, и падает обратно на эту функцию, если нет.
-
-#### Шаг 4. Прописать переменные окружения клиента
-**Локально:** скопируйте `client/.env.example` → `client/.env.local` и подставьте значения.
+#### Шаг 3. Прописать переменные окружения клиента
+**Локально:** скопируйте `client/.env.example` → `client/.env.local` и подставьте значения из шага 1.
 
 **Для GitHub Pages:** добавьте в **Settings → Secrets and variables → Actions → New repository secret**:
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
 
 Workflow уже пробрасывает их в сборку. После добавления секретов сделайте любой пуш в `main`.
 
 ### Как это устроено в коде
 | Файл | Роль |
 |------|------|
-| `client/src/lib/supabase.ts` | создаёт клиент из env-переменных; `isSupabaseConfigured` гейтит облачную логику |
+| `client/src/lib/firebase.ts` | инициализирует Firebase App/Auth/Firestore из env-переменных; `isFirebaseConfigured` гейтит облачную логику |
 | `client/src/lib/auth.tsx` | `AuthProvider`/`useAuth`: сессия, вход/регистрация, запуск синхронизации |
-| `client/src/lib/sync.ts` | merge локального и облачного прогресса (`user_progress.data` jsonb), debounce-выгрузка |
-| `client/src/lib/ai.ts` | `VITE_AI_ENDPOINT` (Cloudflare Worker) в приоритете, иначе `supabase.functions.invoke('check-essay')` |
+| `client/src/lib/sync.ts` | merge локального и облачного прогресса (документ `user_progress/{uid}` в Firestore), debounce-выгрузка |
+| `client/src/lib/ai.ts` | вызов `VITE_AI_ENDPOINT` (Cloudflare Worker) |
 | `client/src/components/AuthWidget.tsx` | кнопка входа/профиль в сайдбаре + модалка |
-| `cloudflare/check-essay-worker.js` | основной прокси к OpenRouter (ключ в секретах воркера) |
-| `supabase/functions/check-essay/` | альтернативный серверный прокси к OpenAI |
+| `cloudflare/check-essay-worker.js` | прокси к OpenRouter (ключ в секретах воркера) |
+| `firestore.rules` | правила доступа: пользователь читает/пишет только свой документ прогресса |
 
 Логика синхронизации: при входе локальный и облачный прогресс **сливаются** (ответы/варианты объединяются без дублей, `learned`/`flash`/`streak` — разумным слиянием), результат пишется и локально, и в облако; дальнейшие изменения уходят в облако с debounce.
-
----
-
-## 12. Бэкапы
-
-Полный бекап (весь репозиторий + история git) можно снять локально в любой момент:
-```bash
-cd ~/ege-obshestvoznanie
-git bundle create ~/ege-obshestvoznanie-backup-$(date +%Y%m%d).bundle --all
-```
-Восстановление из бандла: `git clone ~/ege-obshestvoznanie-backup-YYYYMMDD.bundle restored-repo`.
-
-Также весь код и история постоянно хранятся на GitHub (репозиторий приватный/публичный — см. настройки), плюс каждый деплой архивируется GitHub Actions как artifact на 90 дней.
-
----
-
-⚠️ Задания основаны на открытом банке ФИПИ и материалах сборника «ЕГЭ. Обществознание. Типовые экзаменационные варианты» (Котова, Лискова); предназначены для учебной подготовки.
-
-🤖 Сгенерировано с помощью [Claude Code](https://claude.com/claude-code)

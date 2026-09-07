@@ -326,7 +326,7 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
               className="btn-primary flex items-center gap-2 disabled:opacity-60"
               onClick={runAiCheck}
               disabled={aiBusy || !written.trim() || !aiAvailable}
-              title={!aiAvailable ? 'ИИ-проверка включится после настройки аккаунта (Supabase)' : ''}
+              title={!aiAvailable ? 'ИИ-проверка недоступна: не настроен VITE_AI_ENDPOINT' : ''}
             >
               {aiBusy ? (
                 <svg viewBox="0 0 24 24" className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">

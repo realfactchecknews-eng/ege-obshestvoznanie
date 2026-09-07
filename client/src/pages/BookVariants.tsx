@@ -333,7 +333,7 @@ function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw
           className="btn-primary flex items-center gap-2 disabled:opacity-60"
           onClick={runAiCheck}
           disabled={aiBusy || !answer.trim() || !aiAvailable}
-          title={!aiAvailable ? 'ИИ-проверка включится после настройки аккаунта (Supabase)' : ''}
+          title={!aiAvailable ? 'ИИ-проверка недоступна: не настроен VITE_AI_ENDPOINT' : ''}
         >
           {aiBusy ? 'Проверяю…' : 'Проверить с ИИ'}
         </button>

@@ -1,13 +1,13 @@
-import { supabase } from './supabase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from './firebase'
 import { PROGRESS_KEYS } from './storage'
 
 /**
  * Облачная синхронизация прогресса.
  *
- * Прогресс хранится в Supabase в таблице user_progress одной строкой на пользователя:
- *   user_id uuid (PK, = auth.uid()), data jsonb, updated_at timestamptz.
- *
- * data — это объект { [localStorageKey]: parsedValue } для всех PROGRESS_KEYS.
+ * Прогресс хранится в Firestore, коллекция user_progress, один документ на
+ * пользователя (id = uid), поле data — объект { [localStorageKey]: parsedValue }
+ * для всех PROGRESS_KEYS.
  * При входе локальный и удалённый прогресс объединяются (merge), результат
  * пишется и локально, и в облако. Дальнейшие изменения отправляются с debounce.
  */
@@ -95,17 +95,15 @@ function dedupe<T>(arr: T[], key: (x: T) => string): T[] {
 
 /** Загрузить удалённый прогресс, слить с локальным, сохранить везде. */
 export async function pullAndMerge(userId: string): Promise<void> {
-  if (!supabase) return
-  const { data, error } = await supabase
-    .from('user_progress')
-    .select('data')
-    .eq('user_id', userId)
-    .maybeSingle()
-  if (error) {
-    console.warn('Sync pull error:', error.message)
+  if (!db) return
+  let remote: Blob = {}
+  try {
+    const snap = await getDoc(doc(db, 'user_progress', userId))
+    remote = (snap.data()?.data as Blob) ?? {}
+  } catch (e) {
+    console.warn('Sync pull error:', e)
     return
   }
-  const remote = (data?.data as Blob) ?? {}
   const merged = mergeBlobs(collectLocal(), remote)
   applyToLocal(merged)
   await push(userId)
@@ -115,12 +113,13 @@ export async function pullAndMerge(userId: string): Promise<void> {
 
 /** Выгрузить локальный прогресс в облако. */
 export async function push(userId: string): Promise<void> {
-  if (!supabase) return
+  if (!db) return
   const blob = collectLocal()
-  const { error } = await supabase
-    .from('user_progress')
-    .upsert({ user_id: userId, data: blob, updated_at: new Date().toISOString() })
-  if (error) console.warn('Sync push error:', error.message)
+  try {
+    await setDoc(doc(db, 'user_progress', userId), { data: blob, updatedAt: new Date().toISOString() })
+  } catch (e) {
+    console.warn('Sync push error:', e)
+  }
 }
 
 /** Подписка на локальные изменения прогресса с debounce-выгрузкой. */
