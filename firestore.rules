@@ -5,5 +5,15 @@ service cloud.firestore {
     match /user_progress/{uid} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+
+    // Жалобы на задания / баг-репорты: писать может кто угодно (даже без
+    // входа), читать и удалять — только админ.
+    match /reports/{id} {
+      allow create: if request.resource.data.reason is string
+                    && request.resource.data.reason.size() > 0
+                    && request.resource.data.reason.size() < 2000;
+      allow read, delete: if request.auth != null
+                          && request.auth.token.email == 'realfactchecknews@gmail.com';
+    }
   }
 }

@@ -3,6 +3,7 @@ import { bookVariants, checkBookAnswer, kindLabel, type BookVariant, type BookTa
 import { addAnswer, getBookScores, setBookScore, todayStr } from '../lib/storage'
 import { checkEssay, aiAvailable, type EssayCheck } from '../lib/ai'
 import type { Task } from '../types'
+import { ReportButton } from '../components/ReportButton'
 
 export default function BookVariants() {
   const [open, setOpen] = useState<number | null>(null)
@@ -134,6 +135,7 @@ function VariantView({ variant, onExit }: { variant: BookVariant; onExit: () => 
           <BookTaskCard
             key={t.num}
             task={t}
+            variantNum={variant.variant}
             value={answers[t.num] ?? ''}
             onChange={(val) => setAnswers((a) => ({ ...a, [t.num]: val }))}
             checked={checked[t.num]}
@@ -152,7 +154,7 @@ function VariantView({ variant, onExit }: { variant: BookVariant; onExit: () => 
         </p>
         <div className="space-y-4">
           {variant.part2.map((t) => (
-            <Part2TaskCard key={t.num} task={t} criteriaRaw={variant.criteria_raw} />
+            <Part2TaskCard key={t.num} task={t} variantNum={variant.variant} criteriaRaw={variant.criteria_raw} />
           ))}
         </div>
       </div>
@@ -171,9 +173,10 @@ function VariantView({ variant, onExit }: { variant: BookVariant; onExit: () => 
 }
 
 function BookTaskCard({
-  task, value, onChange, checked, revealed, onCheck, locked,
+  task, variantNum, value, onChange, checked, revealed, onCheck, locked,
 }: {
   task: BookTask
+  variantNum: number
   value: string
   onChange: (v: string) => void
   checked: boolean | undefined
@@ -191,6 +194,9 @@ function BookTaskCard({
         {task.image && (
           <span className="chip !bg-warn/15 !text-warn !border-warn/30">🖼 с иллюстрацией</span>
         )}
+        <span className="ml-auto">
+          <ReportButton compact task={{ id: variantNum * 100 + task.num, task_number: task.num, question: task.text ?? '' }} />
+        </span>
       </div>
 
       {task.text ? (
@@ -254,7 +260,7 @@ function criteriaForTask(criteriaRaw: string, num: number): { text: string; isEx
   return { text: criteriaRaw, isExact: false }
 }
 
-function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw: string }) {
+function Part2TaskCard({ task, variantNum, criteriaRaw }: { task: BookPart2Task; variantNum: number; criteriaRaw: string }) {
   const [answer, setAnswer] = useState('')
   const [showCriteria, setShowCriteria] = useState(false)
   const [aiBusy, setAiBusy] = useState(false)
@@ -297,6 +303,9 @@ function Part2TaskCard({ task, criteriaRaw }: { task: BookPart2Task; criteriaRaw
         {task.report_topic && (
           <span className="chip !bg-accent/15 !text-accent2 !border-accent/30">«{task.report_topic}»</span>
         )}
+        <span className="ml-auto">
+          <ReportButton compact task={{ id: variantNum * 100 + task.num, task_number: task.num, question: task.text ?? '' }} />
+        </span>
       </div>
 
       {task.graph && (

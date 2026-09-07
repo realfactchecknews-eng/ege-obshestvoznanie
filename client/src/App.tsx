@@ -12,8 +12,12 @@ import { StreakFlame } from './components/StreakFlame'
 import { AuthWidget } from './components/AuthWidget'
 import { SplashScreen } from './components/SplashScreen'
 import { ElephantLogo } from './components/ElephantLogo'
+import { ReportButton } from './components/ReportButton'
+import Admin from './pages/Admin'
+import { useAuth } from './lib/auth'
+import { ADMIN_EMAIL } from './lib/reports'
 
-type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'book' | 'weak' | 'flash'
+type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'book' | 'weak' | 'flash' | 'admin'
 
 const NAV: { id: View; label: string; icon: () => ReactElement }[] = [
   { id: 'dashboard', label: 'Главная',     icon: () => <IconHome /> },
@@ -31,6 +35,9 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [splash, setSplash] = useState(true)
   const { theme, toggle } = useTheme()
+  const { user } = useAuth()
+  const isAdmin = user?.email === ADMIN_EMAIL
+  const nav = isAdmin ? [...NAV, { id: 'admin' as View, label: 'Админка', icon: () => <IconShield /> }] : NAV
   const navRef = useRef<HTMLElement>(null)
   const btnRefs = useRef<Map<View, HTMLButtonElement>>(new Map())
   const [indicator, setIndicator] = useState<{ top: number; left: number; width: number; height: number } | null>(null)
@@ -157,7 +164,7 @@ export default function App() {
               }}
             />
           )}
-          {NAV.map((n) => {
+          {nav.map((n) => {
             const active = view === n.id
             return (
               <button
@@ -189,6 +196,7 @@ export default function App() {
             <span className="text-xs text-muted">Серия</span>
             <StreakFlame variant="compact" />
           </div>
+          <ReportButton />
         </div>
       </aside>
 
@@ -209,6 +217,7 @@ export default function App() {
             />
           )}
           {view === 'flash' && <Flashcards />}
+          {view === 'admin' && isAdmin && <Admin />}
         </div>
       </main>
     </div>
@@ -300,6 +309,14 @@ function IconCards() {
     <svg viewBox="0 0 24 24" stroke="currentColor" className={ICON_PROPS} {...STROKE}>
       <rect x="3" y="6" width="14" height="14" rx="2" />
       <rect x="7" y="3" width="14" height="14" rx="2" />
+    </svg>
+  )
+}
+
+function IconShield() {
+  return (
+    <svg viewBox="0 0 24 24" stroke="currentColor" className={ICON_PROPS} {...STROKE}>
+      <path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3z" />
     </svg>
   )
 }

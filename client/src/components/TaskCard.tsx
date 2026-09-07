@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Task } from '../types'
 import { checkAnswer } from '../lib/data'
 import { checkEssay, aiAvailable, type EssayCheck } from '../lib/ai'
+import { ReportButton } from './ReportButton'
 
 interface Props {
   task: Task
@@ -91,6 +92,7 @@ export default function TaskCard({ task, onResult, controlled, onChange }: Props
         {task.source && (
           <span className="ml-auto text-xs text-muted hidden sm:inline">{task.source}</span>
         )}
+        <span className={task.source ? '' : 'ml-auto'}><ReportButton compact task={task} /></span>
       </div>
 
       {/* Question */}
