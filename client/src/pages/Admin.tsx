@@ -4,7 +4,7 @@ import { db } from '../lib/firebase'
 import type { Report } from '../lib/reports'
 
 /** Админка: список жалоб на задания и баг-репортов (коллекция reports в Firestore). */
-export default function Admin() {
+export default function Admin({ onOpenTask }: { onOpenTask: (id: number) => void }) {
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -52,6 +52,11 @@ export default function Admin() {
                 <span className="text-xs text-muted ml-auto">
                   {r.createdAt.toDate().toLocaleString('ru-RU')}
                 </span>
+              )}
+              {r.type === 'task' && r.taskId != null && (
+                <button onClick={() => onOpenTask(r.taskId!)} className="text-xs text-accent2 hover:underline" title="Открыть задание">
+                  Открыть задание →
+                </button>
               )}
               <button onClick={() => remove(r.id)} className="text-muted hover:text-bad transition-colors" title="Удалить">
                 <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

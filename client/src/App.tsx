@@ -32,6 +32,7 @@ const NAV: { id: View; label: string; icon: () => ReactElement }[] = [
 export default function App() {
   const [view, setView] = useState<View>('dashboard')
   const [weakTopics, setWeakTopics] = useState<string[] | undefined>(undefined)
+  const [openTaskId, setOpenTaskId] = useState<number | undefined>(undefined)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [splash, setSplash] = useState(true)
   const { theme, toggle } = useTheme()
@@ -205,7 +206,7 @@ export default function App() {
         <div key={view} className="animate-slide-up">
           {view === 'dashboard' && <Dashboard go={go} />}
           {view === 'theory' && <Theory />}
-          {view === 'practice' && <Practice initialTopics={weakTopics} />}
+          {view === 'practice' && <Practice initialTopics={weakTopics} openTaskId={openTaskId} />}
           {view === 'variant' && <Variant />}
           {view === 'book' && <BookVariants />}
           {view === 'weak' && (
@@ -217,7 +218,9 @@ export default function App() {
             />
           )}
           {view === 'flash' && <Flashcards />}
-          {view === 'admin' && isAdmin && <Admin />}
+          {view === 'admin' && isAdmin && (
+            <Admin onOpenTask={(id) => { setOpenTaskId(id); setView('practice') }} />
+          )}
         </div>
       </main>
     </div>

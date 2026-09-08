@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import TaskCard from '../components/TaskCard'
 import { tasks, TOPICS } from '../lib/data'
 import { addAnswer, getAnswers, todayStr } from '../lib/storage'
@@ -9,11 +9,22 @@ import type { Task } from '../types'
  * Сначала выбираешь колоду, внутри — задания этого номера по порядку.
  * Фильтр по разделу — по желанию, влияет и на колоды, и на список.
  */
-export default function Practice({ initialTopics }: { initialTopics?: string[] }) {
+export default function Practice({ initialTopics, openTaskId }: { initialTopics?: string[]; openTaskId?: number }) {
   const [topic, setTopic] = useState<string>(
     initialTopics && initialTopics.length === 1 ? initialTopics[0] : 'all'
   )
   const [deck, setDeck] = useState<number | null>(null)
+
+  // Переход из админки по конкретному заданию: открыть его колоду и проскроллить к нему
+  useEffect(() => {
+    if (!openTaskId) return
+    const t = tasks.find((x) => x.id === openTaskId)
+    if (!t) return
+    setDeck(t.task_number)
+    setTimeout(() => {
+      document.getElementById(`task-${openTaskId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 100)
+  }, [openTaskId])
   const [answeredIds, setAnsweredIds] = useState<Set<number>>(new Set())
 
   // Режим «слабые темы» (переход со страницы Слабые места) — плоский список по разделам
@@ -124,7 +135,12 @@ export default function Practice({ initialTopics }: { initialTopics?: string[] }
 
         <div className="space-y-5">
           {deckTasks.map((t, i) => (
-            <div key={t.id} className="animate-slide-up" style={{ animationDelay: `${Math.min(i, 8) * 45}ms` }}>
+            <div
+              key={t.id}
+              id={`task-${t.id}`}
+              className={`animate-slide-up ${t.id === openTaskId ? 'ring-2 ring-accent rounded-xl' : ''}`}
+              style={{ animationDelay: `${Math.min(i, 8) * 45}ms` }}
+            >
               {solvedIds.has(t.id) && (
                 <p className="text-xs text-good mb-1.5 ml-1 flex items-center gap-1.5">
                   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
