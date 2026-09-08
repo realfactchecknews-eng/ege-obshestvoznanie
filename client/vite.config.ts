@@ -1,8 +1,8 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// База для GitHub Pages: https://<user>.github.io/ege-obshestvoznanie/
+// Сайт живёт на своём домене (общага.online) в корне, не под /ege-obshestvoznanie/
 export default defineConfig({
-  base: '/ege-obshestvoznanie/',
+  base: '/',
   plugins: [react()],
 })
