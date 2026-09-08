@@ -25,7 +25,9 @@ export async function sendReport(input: {
 }): Promise<{ error?: string }> {
   if (!db) return { error: 'Жалобы недоступны офлайн — попробуйте позже' }
   try {
-    await addDoc(collection(db, 'reports'), { ...input, createdAt: serverTimestamp() })
+    // Firestore не принимает undefined в полях — вырезаем их перед записью
+    const data = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined))
+    await addDoc(collection(db, 'reports'), { ...data, createdAt: serverTimestamp() })
     return {}
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e) }
