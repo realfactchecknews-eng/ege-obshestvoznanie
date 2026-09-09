@@ -125,13 +125,30 @@ export async function push(userId: string): Promise<void> {
 /** Подписка на локальные изменения прогресса с debounce-выгрузкой. */
 export function startAutoSync(userId: string): () => void {
   let timer: number | undefined
+  let dirty = false
   const handler = () => {
+    dirty = true
     if (timer) window.clearTimeout(timer)
-    timer = window.setTimeout(() => push(userId), 1500)
+    timer = window.setTimeout(() => {
+      dirty = false
+      push(userId)
+    }, 1500)
+  }
+  // на телефоне вкладка часто закрывается раньше, чем сработает debounce —
+  // выгружаем сразу, как только страница уходит в фон
+  const flush = () => {
+    if (!dirty) return
+    if (timer) window.clearTimeout(timer)
+    dirty = false
+    push(userId)
   }
   window.addEventListener('ege:progress-changed', handler)
+  document.addEventListener('visibilitychange', flush)
+  window.addEventListener('pagehide', flush)
   return () => {
     window.removeEventListener('ege:progress-changed', handler)
+    document.removeEventListener('visibilitychange', flush)
+    window.removeEventListener('pagehide', flush)
     if (timer) window.clearTimeout(timer)
   }
 }
