@@ -11,8 +11,8 @@
  */
 
 const MODEL = 'deepseek/deepseek-chat' // дёшево и хорошо для русского; можно заменить
-// Модель для разбора плана №24 (дёшево и быстро; DeepSeek на этом JSON тормозил 40–80 с); переопределяется переменной PLAN_MODEL
-const PLAN_MODEL = 'openai/gpt-4o-mini'
+// Модель для структурных разборов (план №24, задание №25) (дёшево и быстро; DeepSeek на этом JSON тормозил 40–80 с); переопределяется переменной STRUCT_MODEL
+const STRUCT_MODEL = 'openai/gpt-4o-mini'
 
 // Максимальные баллы по заданиям части 2 (ЕГЭ обществознание 2026)
 const MAX_SCORES = { 17: 2, 18: 2, 19: 3, 20: 3, 21: 3, 22: 4, 23: 3, 24: 4, 25: 6 }
@@ -38,6 +38,7 @@ export default {
     }
 
     if (body.mode === 'plan24') return checkPlan24(body, env)
+    if (body.mode === 'task25') return checkTask25(body, env)
 
     const { taskNumber, question, answer, criteria, modelAnswer } = body
     if (!question || !answer) return json({ error: 'Нужны question и answer' }, 400)
@@ -163,8 +164,54 @@ ${planText}
 "reveals" — пункт непосредственно раскрывает тему по существу (не абстрактно-формальный). "twoSubsEnough" — true, только если для этого пункта с точки зрения науки возможны лишь два подпункта. Массив points и массивы subs должны точно соответствовать плану ученика по порядку и длине.`
 
   try {
-    const r = await askModel(env, prompt, env.PLAN_MODEL || PLAN_MODEL)
+    const r = await askModel(env, prompt, env.STRUCT_MODEL || STRUCT_MODEL)
     if (!Array.isArray(r.points) || r.points.length !== plan.length) throw new Error('ИИ вернул разбор не по всем пунктам, попробуй ещё раз')
+    return json(r)
+  } catch (e) {
+    return json({ error: e.message }, 502)
+  }
+}
+
+// ---------- №25: обоснование (К1 0–2) + ответ на вопрос (К2 0–1) + три примера (К3 0–3) ----------
+const T25_RULES = `Критерии ЕГЭ-2026 по заданию 25 (максимум 6 баллов):
+К1 «Обоснование» (0–2): 2 — корректное обоснование с опорой на обществоведческие знания в нескольких распространённых предложениях, без ошибок и неточностей, раскрывает причинно-следственные и (или) функциональные связи; 1 — в целом корректное, но с отдельными неточностями, не искажающими сути, И/ИЛИ связи раскрыты не полностью; 0 — одно предложение или словосочетание, обоснование без опоры на обществоведческие знания (на бытовом уровне).
+К2 «Ответ на вопрос» (0–1): 1 — названо необходимое количество объектов (три), все позиции верны, неверных нет.
+К3 «Примеры» (0–3): по баллу за каждый правильный пример, который сформулирован развёрнуто и соответствует всем требованиям задания (в скобках: «развёрнуто», «не дублировать», «указать результат/цель», «в совокупности разные функции/права/принципы» и т. п.). Пример-общая фраза без конкретной ситуации, не соответствующий своему объекту из п. 2, дублирующий другой или фактически неверный — не засчитывается.`
+
+async function checkTask25(body, env) {
+  const { taskText, justification, items, examples } = body
+  const okArr = (a) => Array.isArray(a) && a.length === 3 && a.every((x) => typeof x === 'string')
+  if (!taskText || typeof justification !== 'string' || !okArr(items) || !okArr(examples)) {
+    return json({ error: 'Нужны taskText, justification, items[3], examples[3]' }, 400)
+  }
+  if (justification.length > 3000 || items.some((x) => x.length > 300) || examples.some((x) => x.length > 1500)) {
+    return json({ error: 'Слишком длинный ответ' }, 400)
+  }
+  const prompt = `Ты — строгий, но справедливый эксперт ЕГЭ по обществознанию, проверяешь задание 25.
+
+${T25_RULES}
+
+ЗАДАНИЕ:
+${String(taskText).slice(0, 2500)}
+
+ОТВЕТ УЧЕНИКА
+Пункт 1 (обоснование):
+${justification}
+
+Пункт 2 (три позиции):
+${items.map((x, i) => `${i + 1}. ${x}`).join('\n')}
+
+Пункт 3 (примеры; i-й пример относится к i-й позиции пункта 2):
+${examples.map((x, i) => `${i + 1}. ${x}`).join('\n')}
+
+Проверь по критериям и условиям задания, включая все требования в скобках. Не придирайся к стилю, оценивай содержание. Если позиция в п. 2 неверна или пуста, соответствующий пример не засчитывай. Верни ТОЛЬКО JSON без пояснений вокруг:
+{"justification":{"usesKnowledge":true|false,"causalLinks":"full|partial|none","hasErrors":true|false,"comment":"что хорошо и чего не хватает, 1–2 предложения"},"items":[{"ok":true|false,"comment":"только если ok=false, коротко"},{...},{...}],"examples":[{"ok":true|false,"issue":"none|not_developed|mismatch|duplicate|wrong|requirement","comment":"только если ok=false, коротко"},{...},{...}],"jointRequirementMet":true|false,"advice":"главный совет ученику, 2 предложения"}
+"usesKnowledge" — есть опора на обществоведческие понятия и знания, а не бытовые рассуждения. "causalLinks": full — связи раскрыты полно, partial — частично, none — нет связей. "hasErrors" — есть ошибки или неточности. "jointRequirementMet" — выполнено ли требование «в совокупности» (разные функции/права/принципы, разные примеры); если такого требования в задании нет — true. items и examples — ровно по три элемента.`
+  try {
+    const r = await askModel(env, prompt, env.STRUCT_MODEL || STRUCT_MODEL)
+    if (!r.justification || !Array.isArray(r.items) || r.items.length !== 3 || !Array.isArray(r.examples) || r.examples.length !== 3) {
+      throw new Error('ИИ вернул неполный разбор, попробуй ещё раз')
+    }
     return json(r)
   } catch (e) {
     return json({ error: e.message }, 502)

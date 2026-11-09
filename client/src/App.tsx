@@ -8,6 +8,7 @@ import BookVariants from './pages/BookVariants'
 import WeakSpots from './pages/WeakSpots'
 import Flashcards from './pages/Flashcards'
 import Plan24 from './pages/Plan24'
+import Task25 from './pages/Task25'
 import { useTheme } from './lib/theme'
 import { StreakFlame } from './components/StreakFlame'
 import { AuthWidget } from './components/AuthWidget'
@@ -18,7 +19,7 @@ import Admin from './pages/Admin'
 import { useAuth } from './lib/auth'
 import { ADMIN_EMAIL } from './lib/reports'
 
-type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'book' | 'weak' | 'flash' | 'plan' | 'admin'
+type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'book' | 'weak' | 'flash' | 'plan' | 'task25' | 'admin'
 
 const NAV: { id: View; label: string; icon: () => ReactElement }[] = [
   { id: 'dashboard', label: 'Главная',     icon: () => <IconHome /> },
@@ -28,6 +29,7 @@ const NAV: { id: View; label: string; icon: () => ReactElement }[] = [
   { id: 'variant',   label: 'Вариант',     icon: () => <IconTimer /> },
   { id: 'weak',      label: 'Слабые места', icon: () => <IconTarget /> },
   { id: 'plan',      label: 'План №24',    icon: () => <IconPlan /> },
+  { id: 'task25',    label: 'Задание №25', icon: () => <IconEssay /> },
   { id: 'flash',     label: 'Карточки',    icon: () => <IconCards /> },
 ]
 
@@ -211,6 +213,7 @@ export default function App() {
           {view === 'practice' && <Practice initialTopics={weakTopics} openTaskId={openTaskId} />}
           {view === 'variant' && <Variant />}
           {view === 'plan' && <Plan24 />}
+          {view === 'task25' && <Task25 />}
           {view === 'book' && <BookVariants />}
           {view === 'weak' && (
             <WeakSpots
@@ -314,6 +317,15 @@ function IconPlan() {
   return (
     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />
+    </svg>
+  )
+}
+
+function IconEssay() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+      <path d="M14 3v5h5M9 13h6M9 17h6" />
     </svg>
   )
 }

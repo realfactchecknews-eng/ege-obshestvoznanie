@@ -169,12 +169,12 @@ export default function Plan24() {
       </div>
 
       <div className="card p-4 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1.5 text-sm flex-1 min-w-[220px]">
+        <label className="flex flex-col gap-1.5 text-sm flex-1 min-w-[220px] max-w-full">
           <span className="text-muted text-xs font-medium uppercase tracking-wide">Тема</span>
           <select
             value={sel}
             onChange={(e) => setSel(e.target.value)}
-            className="bg-panel2 border border-border rounded-lg px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="w-full min-w-0 bg-panel2 border border-border rounded-lg px-3 py-2 outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
           >
             {PLAN_TOPICS.map((t) => <option key={t} value={t}>{t}</option>)}
             <option value={CUSTOM}>✎ Своя тема…</option>
