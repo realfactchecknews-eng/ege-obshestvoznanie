@@ -7,6 +7,7 @@ import Variant from './pages/Variant'
 import BookVariants from './pages/BookVariants'
 import WeakSpots from './pages/WeakSpots'
 import Flashcards from './pages/Flashcards'
+import Plan24 from './pages/Plan24'
 import { useTheme } from './lib/theme'
 import { StreakFlame } from './components/StreakFlame'
 import { AuthWidget } from './components/AuthWidget'
@@ -17,7 +18,7 @@ import Admin from './pages/Admin'
 import { useAuth } from './lib/auth'
 import { ADMIN_EMAIL } from './lib/reports'
 
-type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'book' | 'weak' | 'flash' | 'admin'
+type View = 'dashboard' | 'theory' | 'practice' | 'variant' | 'book' | 'weak' | 'flash' | 'plan' | 'admin'
 
 const NAV: { id: View; label: string; icon: () => ReactElement }[] = [
   { id: 'dashboard', label: 'Главная',     icon: () => <IconHome /> },
@@ -26,6 +27,7 @@ const NAV: { id: View; label: string; icon: () => ReactElement }[] = [
   { id: 'book',      label: 'Сборник 30',  icon: () => <IconStack /> },
   { id: 'variant',   label: 'Вариант',     icon: () => <IconTimer /> },
   { id: 'weak',      label: 'Слабые места', icon: () => <IconTarget /> },
+  { id: 'plan',      label: 'План №24',    icon: () => <IconPlan /> },
   { id: 'flash',     label: 'Карточки',    icon: () => <IconCards /> },
 ]
 
@@ -208,6 +210,7 @@ export default function App() {
           {view === 'theory' && <Theory />}
           {view === 'practice' && <Practice initialTopics={weakTopics} openTaskId={openTaskId} />}
           {view === 'variant' && <Variant />}
+          {view === 'plan' && <Plan24 />}
           {view === 'book' && <BookVariants />}
           {view === 'weak' && (
             <WeakSpots
@@ -303,6 +306,14 @@ function IconTarget() {
       <circle cx="12" cy="12" r="9" />
       <circle cx="12" cy="12" r="5" />
       <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+    </svg>
+  )
+}
+
+function IconPlan() {
+  return (
+    <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />
     </svg>
   )
 }

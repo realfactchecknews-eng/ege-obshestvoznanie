@@ -8,3 +8,6 @@ server/db/*.db-*
 .env.local
 */.env.local
 .supabase/
+
+# кэш wrangler (содержит данные аккаунта Cloudflare)
+.wrangler/

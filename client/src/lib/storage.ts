@@ -26,7 +26,7 @@ function write<T>(key: string, val: T) {
 }
 
 // Ключи, относящиеся к прогрессу ученика (для облачной синхронизации)
-export const PROGRESS_KEYS = [K.answers, K.learned, K.variants, K.flash, K.streak, 'ege2_book']
+export const PROGRESS_KEYS = [K.answers, K.learned, K.variants, K.flash, K.streak, 'ege2_book', 'ege2_plan24']
 
 // ---- Прогресс по вариантам сборника (лучший результат части 1) ----
 export function getBookScores(): Record<number, number> {

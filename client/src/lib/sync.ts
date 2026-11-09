@@ -51,6 +51,12 @@ function mergeBlobs(local: Blob, remote: Blob): Blob {
     (v) => String(v.id)
   )
 
+  // попытки №24 — массив, дубли по времени
+  merged['ege2_plan24'] = dedupe(
+    [...asArray(remote['ege2_plan24']), ...asArray(local['ege2_plan24'])],
+    (a) => String(a.ts)
+  ).sort((a, b) => b.ts - a.ts)
+
   // ege_learned — объект bool: true побеждает
   merged['ege2_learned'] = { ...asObj(remote['ege2_learned']), ...asObj(local['ege2_learned']) }
 
