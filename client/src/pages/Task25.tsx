@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useMemo, useRef, useState } from 'react'
+import { forwardRef, useEffect, useRef, useState } from 'react'
 import { aiAvailable } from '../lib/ai'
 import {
   HINTS, ISSUE25, TASKS25, checkTask25, countSentences, emptyAnswer, getAttempts25, getDraft25, hintsCount,
